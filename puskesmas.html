@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Puskesmas - PKP Jawa Timur</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .navbar-brand span {
+            color: #90caf9;
+            font-size: 1.5rem;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #42a5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: #90caf9;
+            text-transform: capitalize;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* Loading & Error states */
+        .loading-state, .error-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+
+        .loading-state .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top: 4px solid #0d47a1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state { color: #d32f2f; }
+        .error-state .error-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .section-body { padding: 1.5rem; }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .kluster-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .kluster-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #eee;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .quick-link {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .quick-link:hover {
+            background: #e3f2fd;
+            border-color: #90caf9;
+            transform: translateY(-2px);
+        }
+
+        .quick-link .link-icon { font-size: 1.5rem; margin-right: 1rem; color: #0d47a1; }
+        .quick-link .link-label { font-size: 0.9rem; font-weight: 600; }
+
+        .footer-info {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+            font-size: 0.85rem;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 2rem;
+        }
+
+        /* Dropdown Submenu */
+        .dropdown-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .submenu-select {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .submenu-select:focus {
+            outline: none;
+            border-color: #0d47a1;
+        }
+
+        .btn-go {
+            padding: 12px 24px;
+            background-color: #0d47a1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar" id="navbar">
+        <div class="navbar-brand">
+            <span>&#9733;</span>
+            <span>PKP Jawa Timur</span>
+        </div>
+        <div class="navbar-user">
+            <div class="user-info">
+                <div class="user-name" id="displayName">-</div>
+                <div class="user-role" id="displayRole">-</div>
+            </div>
+            <div class="user-avatar" id="displayAvatar">P</div>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div id="loadingState" class="loading-state" style="display:block;">
+        <div class="spinner"></div>
+        <p>Memuat data dashboard...</p>
+    </div>
+
+    <div id="errorState" class="error-state" style="display:none;">
+        <div class="error-icon">&#9888;</div>
+        <p id="errorMessage">Terjadi kesalahan.</p>
+        <button onclick="location.reload()" style="margin-top:1rem;padding:10px 24px;background:#0d47a1;color:white;border:none;border-radius:6px;cursor:pointer;">Coba Lagi</button>
+    </div>
+
+    <div id="mainContent" class="main-content" style="display:none;">
+        <div id="klusterContainer">
+            <!-- Kartu Kluster dan Sub-menu akan dimuat di sini -->
+            <p class="empty-state" style="display:none;" id="emptyKluster">Tidak ada data kluster yang dapat ditampilkan.</p>
+        </div>
+
+        <div class="footer-info">
+            &copy; 2024 Penilaian Kinerja Puskesmas - Jawa Timur | Sistem Monitoring Puskesmas
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            const loadingEl = document.getElementById('loadingState');
+            const errorEl = document.getElementById('errorState');
+            const errorMsg = document.getElementById('errorMessage');
+            const mainEl = document.getElementById('mainContent');
+
+            try {
+                loadingEl.style.display = 'block';
+                errorEl.style.display = 'none';
+                mainEl.style.display = 'none';
+
+                const userRes = await fetch('API/get_current_user.php');
+                const userData = await userRes.json();
+
+                if (!userData.ok) {
+                    throw new Error(userData.error || 'Sesi tidak valid. Silakan login ulang.');
+                }
+
+                const user = userData.user;
+
+                if (user.role !== 'puskesmas') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                document.getElementById('displayName').textContent = user.nama;
+                document.getElementById('displayRole').textContent = user.puskesmas || user.role;
+                document.getElementById('displayAvatar').textContent = user.nama.charAt(0).toUpperCase();
+
+                // Ambil data kluster dan kluster_l1 secara bersamaan
+                const [klusterRes, klusterL1Res] = await Promise.all([
+                    fetch('API/get_kluster.php'),
+                    fetch('API/get_kluster_l1.php')
+                ]);
+
+                const klusterData = await klusterRes.json();
+                const klusterL1Data = await klusterL1Res.json();
+
+                const klusters = (klusterData.ok && Array.isArray(klusterData.data)) ? klusterData.data : [];
+                const klustersL1 = (klusterL1Data.ok && Array.isArray(klusterL1Data.data)) ? klusterL1Data.data : [];
+
+                const container = document.getElementById('klusterContainer');
+                container.innerHTML = ''; // Bersihkan container
+
+                if (klusters.length === 0) {
+                    document.getElementById('emptyKluster').style.display = 'block';
+                } else {
+                    klusters.forEach(kluster => {
+                        const subMenus = klustersL1.filter(l1 => l1.kd_0 === kluster.kd);
+
+                        let subMenuHtml = '';
+                        if (subMenus.length > 0) {
+                            const selectId = `select-kluster-${kluster.kd}`;
+                            subMenuHtml += `<div class="dropdown-container">`;
+                            subMenuHtml += `<select id="${selectId}" class="submenu-select">`;
+                            subMenuHtml += `<option value="">-- Pilih Sub Menu Penilaian --</option>`;
+                            subMenus.forEach(subMenu => {
+                                const url = `penilaian.html?kd_1=${subMenu.kd_1}`;
+                                subMenuHtml += `<option value="${url}">${escapeHtml(subMenu.uraian)}</option>`;
+                            });
+                            subMenuHtml += `</select>`;
+                            subMenuHtml += `<button class="btn-go" onclick="navigateToSelected('${selectId}')">Buka</button>`;
+                            subMenuHtml += `</div>`;
+                        } else {
+                            subMenuHtml = '<p style="color:#888; font-size:0.9rem;">Belum ada sub-menu untuk kluster ini.</p>';
+                        }
+
+                        container.innerHTML += `
+                            <div class="kluster-card">
+                                <div class="kluster-header">${escapeHtml(kluster.uraian)}</div>
+                                <div class="section-body">${subMenuHtml}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                loadingEl.style.display = 'none';
+                mainEl.style.display = 'block';
+
+            } catch (e) {
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorMsg.textContent = e.message || 'Terjadi kesalahan saat memuat data.';
+                if (e.message.includes('Sesi tidak valid')) {
+                    setTimeout(() => window.location.href = 'index.html', 3000);
+                }
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function navigateToSelected(selectId) {
+            const select = document.getElementById(selectId);
+            if (select && select.value) {
+                window.location.href = select.value;
+            }
+        }
+
+        function logout() {
+            if (confirm('Yakin ingin logout?')) {
+                fetch('API/logout.php', { method: 'POST' })
+                    .finally(() => {
+                        window.location.href = 'index.html';
+                    });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+
+</body>
+</html>

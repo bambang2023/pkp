@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">Form Indikator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; background-color: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; padding: 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #333; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input[type="text"], textarea { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        select { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .error { margin-top: 16px; padding: 12px; border: 1px solid #dc3545; border-radius: 6px; color: #dc3545; background: #f8d7da; display: none; }
+        button, a.button-back { display: inline-block; padding: 10px 16px; background: #0d6efd; color: #fff; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 16px; }
+        button:hover, a.button-back:hover { background: #0b5ed7; }
+        a.button-back { background: #6c757d; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 id="formTitle">Form Indikator</h1>
+
+    <div id="errorBox" class="error"></div>
+
+    <form id="indikatorForm">
+        <label for="kd_3">Kluster L3 (KD_3):</label>
+        <select id="kd_3" name="kd_3" required>
+            <option value="">-- Pilih Kluster L3 --</option>
+        </select>
+
+        <label for="kd_ind">KD Indikator:</label>
+        <input type="text" id="kd_ind" name="kd_ind" required readonly style="background:#e9ecef;">
+
+        <label for="indikator">Indikator:</label>
+        <input type="text" id="indikator" name="indikator" required>
+
+        <label for="kegiatan">Kegiatan:</label>
+        <textarea id="kegiatan" name="kegiatan" rows="3"></textarea>
+
+        <label for="DO">Definisi Operasional (DO):</label>
+        <textarea id="DO" name="DO" rows="3"></textarea>
+
+        <label for="formula">Formula:</label>
+        <input type="text" id="formula" name="formula">
+
+        <label for="sumber_data">Sumber Data:</label>
+        <input type="text" id="sumber_data" name="sumber_data">
+
+        <button type="submit" id="submitBtn">Simpan</button>
+        <a href="indikator.html" class="button-back">Kembali</a>
+    </form>
+</div>
+
+<script>
+(async function () {
+    const form = document.getElementById('indikatorForm');
+    const errorBox = document.getElementById('errorBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const pageTitle = document.getElementById('pageTitle');
+    const formTitle = document.getElementById('formTitle');
+
+    const kd3Select = document.getElementById('kd_3');
+    const kdIndInput = document.getElementById('kd_ind');
+
+    let indikatorData = [];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const editId = urlParams.get('edit');
+
+    function populateKd3Options() {
+        return fetch('API/get_kluster_l3.php', { method: 'GET', headers: { 'Accept': 'application/json' } })
+            .then(async (res) => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const payload = await res.json();
+                if (!payload || payload.ok !== true || !Array.isArray(payload.data)) {
+                    throw new Error(payload?.error || 'Response API Kluster L3 tidak valid.');
+                }
+                return payload.data;
+            })
+            .then((data) => {
+                kd3Select.innerHTML = '<option value="">-- Pilih Kluster L3 --</option>';
+                for (const item of data) {
+                    const kd3 = item?.kd_3;
+                    const uraian = item?.uraian;
+                    if (!kd3) continue;
+
+                    const opt = document.createElement('option');
+                    opt.value = kd3;
+                    opt.textContent = uraian ? `${kd3} - ${uraian}` : kd3;
+                    kd3Select.appendChild(opt);
+                }
+            });
+    }
+
+    function getNextKdInd(kd3) {
+        if (!kd3) return '';
+        // Saat edit, kita tidak perlu generate nomor baru jika kd_3 tidak berubah
+        if (editId) return kdIndInput.value;
+
+        const filtered = Array.isArray(indikatorData)
+            ? indikatorData.filter((item) => String(item?.kd_3 ?? '') === String(kd3))
+            : [];
+        const count = filtered.length;
+        return `${kd3}.${String(count + 1).padStart(2, '0')}`;
+    }
+    function setKdIndFromKd3() {
+        kdIndInput.value = getNextKdInd(kd3Select.value);
+    }
+
+    function showError(msg) {
+        errorBox.textContent = msg || 'Gagal menyimpan data.';
+        errorBox.style.display = 'block';
+    }
+
+    function populateForm(data) {
+        if (!data) return;
+        // Tunggu sampai opsi kd_3 selesai dimuat
+        const checkOptions = setInterval(() => {
+            const optionExists = kd3Select.querySelector(`option[value="${data.kd_3}"]`);
+            if (optionExists) {
+                clearInterval(checkOptions);
+                kd3Select.value = data.kd_3;
+                kd3Select.disabled = true; // Nonaktifkan pilihan kluster saat edit
+            }
+        }, 100);
+
+        kdIndInput.value = data.kd_ind || '';
+        document.getElementById('indikator').value = data.indikator || '';
+        document.getElementById('kegiatan').value = data.kegiatan || '';
+        document.getElementById('DO').value = data.DO || '';
+        document.getElementById('formula').value = data.formula || '';
+        document.getElementById('sumber_data').value = data.sumber_data || '';
+    }
+
+    // Load data-data yang diperlukan
+    try {
+        // Selalu muat opsi Kluster L3 terlebih dahulu
+        await populateKd3Options();
+
+        if (editId) {
+            // Mode Edit
+            pageTitle.textContent = 'Edit Indikator';
+            formTitle.textContent = 'Edit Indikator';
+            submitBtn.textContent = 'Update';
+
+            // Ambil data spesifik untuk indikator yang akan diedit
+            // NOTE: API/get_indikator.php perlu dimodifikasi untuk menerima parameter kd_ind
+            const res = await fetch(`API/get_indikator.php?kd_ind=${encodeURIComponent(editId)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}. Gagal mengambil data indikator.`);
+            const payload = await res.json();
+            if (!payload.ok || !payload.data) {
+                throw new Error(payload.error || 'Data indikator tidak ditemukan.');
+            }
+            populateForm(payload.data);
+
+        } else {
+            // Mode Tambah Baru
+            // Ambil semua data indikator untuk menghitung kd_ind selanjutnya
+            const res = await fetch('API/get_indikator.php', { method: 'GET', headers: { 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error(`HTTP ${res.status}. Pastikan API/get_indikator.php sudah dibuat.`);
+            const payload = await res.json();
+            if (!payload || !Array.isArray(payload.data)) {
+                throw new Error(payload?.error || 'Response API Indikator tidak valid.');
+            }
+            indikatorData = payload.data;
+            setKdIndFromKd3(); // Panggil sekali untuk inisialisasi
+        }
+    } catch (e) {
+        showError('Gagal memuat data awal. ' + (e?.message || ''));
+    }
+
+    kd3Select.addEventListener('change', setKdIndFromKd3);
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        errorBox.style.display = 'none';
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Menyimpan...';
+
+        // Kumpulkan data dari form
+        const formData = {
+            kd_3: kd3Select.value,
+            kd_ind: kdIndInput.value,
+            indikator: document.getElementById('indikator').value,
+            kegiatan: document.getElementById('kegiatan').value,
+            DO: document.getElementById('DO').value,
+            formula: document.getElementById('formula').value,
+            sumber_data: document.getElementById('sumber_data').value,
+        };
+
+        // Jika mode edit, tambahkan ID lama untuk identifikasi di backend
+        if (editId) {
+            formData.original_kd_ind = editId;
+        }
+
+        try {
+            // NOTE: API/save_indikator.php akan menangani INSERT dan UPDATE
+            const res = await fetch('API/save_indikator.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const payload = await res.json();
+            if (!res.ok || payload.ok !== true) {
+                throw new Error(payload?.error || 'Gagal menyimpan data.');
+            }
+
+            window.location.href = 'indikator.html';
+        } catch (e) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = editId ? 'Update' : 'Simpan';
+            showError(e?.message || 'Gagal menyimpan data.');
+        }
+    });
+})();
+</script>
+</body>
+</html>

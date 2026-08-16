@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Kluster L2</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; background-color: #f4f4f9; }
+        .container { max-width: 600px; margin: auto; padding: 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #333; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input[type="text"] { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        select { width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .error { margin-top: 16px; padding: 12px; border: 1px solid #dc3545; border-radius: 6px; color: #dc3545; background: #f8d7da; display: none; }
+        button { display: inline-block; padding: 10px 16px; background: #0d6efd; color: #fff; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0b5ed7; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Form Kluster L2</h1>
+
+    <div id="errorBox" class="error"></div>
+
+    <form id="klusterL2Form">
+        <label for="kd_1">KD_1:</label>
+        <select id="kd_1" name="kd_1" required>
+            <option value="">-- Pilih KD_1 --</option>
+        </select>
+
+        <label for="kd_2">KD_2:</label>
+        <input type="text" id="kd_2" name="kd_2" required readonly style="background:#e9ecef;">
+
+        <label for="uraian">Uraian:</label>
+        <input type="text" id="uraian" name="uraian" required>
+
+        <button type="submit" id="submitBtn">Simpan</button>
+    </form>
+</div>
+
+<script>
+(async function () {
+    const form = document.getElementById('klusterL2Form');
+    const errorBox = document.getElementById('errorBox');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const kd1Select = document.getElementById('kd_1');
+    const kd2Input = document.getElementById('kd_2');
+
+    let klusterL2Data = [];
+
+    function populateKd1Options() {
+        return fetch('API/get_kluster_l1.php', { method: 'GET', headers: { 'Accept': 'application/json' } })
+            .then(async (res) => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const payload = await res.json();
+                if (!payload || payload.ok !== true || !Array.isArray(payload.data)) {
+                    throw new Error(payload && payload.error ? payload.error : 'Response API tidak valid.');
+                }
+                return payload.data;
+            })
+            .then((data) => {
+                kd1Select.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pilih KD_1 --';
+                kd1Select.appendChild(placeholder);
+
+                for (const item of data) {
+                    const kd1 = item && item.kd_1 !== undefined && item.kd_1 !== null ? String(item.kd_1) : '';
+                    const uraian = item && item.uraian !== undefined && item.uraian !== null ? String(item.uraian) : '';
+                    if (!kd1) continue;
+
+                    const opt = document.createElement('option');
+                    opt.value = kd1;
+                    opt.textContent = uraian ? `${kd1} - ${uraian}` : kd1;
+                    kd1Select.appendChild(opt);
+                }
+            });
+    }
+
+    function getNextKd2(kd1) {
+        if (!kd1) return '';
+        const filtered = Array.isArray(klusterL2Data)
+            ? klusterL2Data.filter((item) => String(item?.kd_1 ?? '') === String(kd1))
+            : [];
+        const count = filtered.length;
+        return `${kd1}.${String(count + 1).padStart(2, '0')}`;
+    }
+
+    function setKd2FromKd1() {
+        const kd1 = kd1Select.value;
+        kd2Input.value = getNextKd2(kd1);
+    }
+
+    function showError(msg) {
+        errorBox.textContent = msg || 'Gagal menyimpan data.';
+        errorBox.style.display = 'block';
+    }
+
+    // Load options for KD_1 select
+    try {
+        await populateKd1Options();
+    } catch (e) {
+        showError('Gagal memuat pilihan KD_1. ' + (e && e.message ? e.message : ''));
+    }
+
+    // Load existing KD_2 data to compute count(kd1)
+    try {
+        const res = await fetch('API/get_kluster_l2.php', { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const payload = await res.json();
+        if (!payload || payload.ok !== true || !Array.isArray(payload.data)) {
+            throw new Error(payload && payload.error ? payload.error : 'Response API tidak valid.');
+        }
+        klusterL2Data = payload.data;
+    } catch (e) {
+        showError('Gagal memuat data KD_2 untuk menghitung KD_2 otomatis. ' + (e && e.message ? e.message : ''));
+    }
+
+    kd1Select.addEventListener('change', function () {
+        setKd2FromKd1();
+    });
+
+    // initial value
+    setKd2FromKd1();
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        errorBox.style.display = 'none';
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Menyimpan...';
+
+        const formData = {
+            kd_1: kd1Select.value,
+            kd_2: document.getElementById('kd_2').value,
+            uraian: document.getElementById('uraian').value,
+        };
+
+        try {
+            const res = await fetch('API/save_kluster_l2.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const payload = await res.json();
+            if (!res.ok || !payload || payload.ok !== true) {
+                throw new Error(payload && payload.error ? payload.error : 'Gagal menyimpan data.');
+            }
+
+            window.location.href = 'kluster_l2.html';
+        } catch (e) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Simpan';
+            showError(e && e.message ? e.message : 'Gagal menyimpan data.');
+        }
+    });
+})();
+</script>
+</body>
+</html>

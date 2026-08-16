@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Data Indikator - PKP</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Menambahkan beberapa style khusus untuk halaman ini */
+        .form-container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: #0056b3;
+            color: white;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        header nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+        header nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Input Data Indikator Puskesmas</h1>
+            <nav>
+                <a href="puskesmas.html">Dashboard</a>
+                <a href="#" id="logout-btn">Logout</a>
+            </nav>
+        </header>
+
+        <main class="container">
+            <div class="form-container">
+                <form id="indikator-form">
+                    <div class="form-group">
+                        <label for="kluster">Pilih Kluster</label>
+                        <select id="kluster" name="kluster" required>
+                            <option value="">Memuat kluster...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kluster_l1">Pilih Kluster L1</label>
+                        <select id="kluster_l1" name="kluster_l1" required disabled>
+                            <option value="">Pilih kluster terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kluster_l2">Pilih Kluster L2</label>
+                        <select id="kluster_l2" name="kluster_l2" required disabled>
+                            <option value="">Pilih kluster L1 terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="kluster_l3">Pilih Kluster L3</label>
+                        <select id="kluster_l3" name="kluster_l3" required disabled>
+                            <option value="">Pilih kluster L2 terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="indikator">Pilih Indikator</label>
+                        <select id="indikator" name="kd_ind" required disabled>
+                            <option value="">Pilih kluster L3 terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="target">Target (%)</label>
+                        <input type="number" id="target" name="target" step="0.01" min="0" max="100" required placeholder="Contoh: 85.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="satuan">Satuan</label>
+                        <input type="text" id="satuan" name="satuan" required placeholder="Contoh: %">
+                    </div>
+                    <div class="form-group">
+                        <label for="jml_sasaran">Jumlah Sasaran</label>
+                        <input type="number" id="jml_sasaran" name="jml_sasaran" min="0" required placeholder="Contoh: 150">
+                    </div>
+                    <div class="form-group">
+                        <label for="capaian">Capaian</label>
+                        <input type="number" id="capaian" name="capaian" min="0" required placeholder="Contoh: 120">
+                    </div>
+                    <button type="submit" class="submit-btn">Simpan Data</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Helper function to populate select options
+        function populateSelect(selectEl, items, valueKey, textKey, placeholder) {
+            selectEl.innerHTML = `<option value="">-- ${placeholder} --</option>`;
+            items.forEach(item => {
+                const option = new Option(`${item[valueKey]} - ${item[textKey]}`, item[valueKey]);
+                selectEl.add(option);
+            });
+            selectEl.disabled = false;
+        }
+
+        // Helper function to reset and disable select elements
+        function resetSelect(selectEl, placeholder) {
+            selectEl.innerHTML = `<option value="">-- ${placeholder} --</option>`;
+            selectEl.disabled = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const klusterSelect = document.getElementById('kluster');
+            const klusterL1Select = document.getElementById('kluster_l1');
+            const klusterL2Select = document.getElementById('kluster_l2');
+            const klusterL3Select = document.getElementById('kluster_l3');
+            const indikatorSelect = document.getElementById('indikator');
+
+            let allKlusterL1 = [], allKlusterL2 = [], allKlusterL3 = [], allIndikator = [];
+
+            // 1. Cek otorisasi pengguna
+            try {
+                const userResponse = await fetch('API/get_current_user.php');
+                const result = await userResponse.json();
+                if (!result.ok || result.user.role !== 'puskesmas') {
+                    window.location.href = 'index.html'; // Redirect jika bukan role puskesmas
+                    return;
+                }
+            } catch (error) {
+                window.location.href = 'index.html'; // Redirect jika ada error
+                return;
+            }
+
+            // 2. Ambil semua data referensi di awal
+            try {
+                const [klusterRes, klusterL1Res, klusterL2Res, klusterL3Res, indikatorRes] = await Promise.all([
+                    fetch('API/get_kluster.php'),
+                    fetch('API/get_kluster_l1.php'),
+                    fetch('API/get_kluster_l2.php'),
+                    fetch('API/get_kluster_l3.php'),
+                    fetch('API/get_indikator.php')
+                ]);
+
+                const klusterData = await klusterRes.json();
+                const klusterL1Data = await klusterL1Res.json();
+                const klusterL2Data = await klusterL2Res.json();
+                const klusterL3Data = await klusterL3Res.json();
+                const indikatorData = await indikatorRes.json();
+
+                if (klusterData.ok) populateSelect(klusterSelect, klusterData.data, 'kd', 'uraian', 'Pilih Kluster');
+                if (klusterL1Data.ok) allKlusterL1 = klusterL1Data.data;
+                if (klusterL2Data.ok) allKlusterL2 = klusterL2Data.data;
+                if (klusterL3Data.ok) allKlusterL3 = klusterL3Data.data;
+                if (indikatorData.ok) allIndikator = indikatorData.data;
+
+            } catch (error) {
+                klusterSelect.innerHTML = '<option value="">Gagal memuat data referensi</option>';
+                console.error("Gagal memuat data:", error);
+            }
+
+            // 3. Event listener untuk dropdown berjenjang
+            klusterSelect.addEventListener('change', () => {
+                const selectedKd = klusterSelect.value;
+                const filteredL1 = allKlusterL1.filter(item => item.kd_0 === selectedKd);
+                populateSelect(klusterL1Select, filteredL1, 'kd_1', 'uraian', 'Pilih Kluster L1');
+                resetSelect(klusterL2Select, 'Pilih kluster L1 terlebih dahulu');
+                resetSelect(klusterL3Select, 'Pilih kluster L2 terlebih dahulu');
+                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+            });
+
+            klusterL1Select.addEventListener('change', () => {
+                const selectedKd1 = klusterL1Select.value;
+                const filteredL2 = allKlusterL2.filter(item => item.kd_1 === selectedKd1);
+                populateSelect(klusterL2Select, filteredL2, 'kd_2', 'uraian', 'Pilih Kluster L2');
+                resetSelect(klusterL3Select, 'Pilih kluster L2 terlebih dahulu');
+                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+            });
+
+            klusterL2Select.addEventListener('change', () => {
+                const selectedKd2 = klusterL2Select.value;
+                const filteredL3 = allKlusterL3.filter(item => item.kd_2 === selectedKd2);
+                populateSelect(klusterL3Select, filteredL3, 'kd_3', 'uraian', 'Pilih Kluster L3');
+                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+            });
+
+            klusterL3Select.addEventListener('change', () => {
+                const selectedKd3 = klusterL3Select.value;
+                const filteredIndikator = allIndikator.filter(item => item.kd_3 === selectedKd3);
+                populateSelect(indikatorSelect, filteredIndikator, 'kd_ind', 'indikator', 'Pilih Indikator');
+            });
+
+            // 4. Handle Logout
+            document.getElementById('logout-btn').addEventListener('click', async (e) => {
+                e.preventDefault();
+                await fetch('API/logout.php');
+                window.location.href = 'index.html';
+            });
+
+            // 5. Handle Form Submission (Contoh)
+            document.getElementById('indikator-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+                
+                console.log('Data yang akan dikirim:', data);
+                alert('Data siap dikirim. Lihat console untuk detail. Anda perlu membuat endpoint API untuk menyimpan data ini.');
+                
+                // TODO: Ganti dengan fetch() untuk mengirim data ke API backend
+                /*
+                fetch('API/save_data_puskesmas.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if(result.ok) {
+                        alert('Data berhasil disimpan!');
+                        e.target.reset();
+                    } else {
+                        alert('Gagal menyimpan data: ' + result.error);
+                    }
+                })
+                .catch(err => alert('Terjadi kesalahan.'));
+                */
+            });
+        });
+    </script>
+</body>
+</html>

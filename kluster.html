@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Data Kluster</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        .card { max-width: 900px; padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        h2 { margin: 0; }
+        a.button, button {
+            display: inline-block;
+            padding: 10px 16px;
+            background: #0d6efd;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+        a.button:hover { background: #0b5ed7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #e5e5e5; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f7f7f7; }
+        .empty { margin-top: 16px; padding: 12px; border: 1px dashed #ddd; color: #666; }
+        .error { margin-top: 16px; padding: 12px; border: 1px solid #dc3545; border-radius: 6px; color: #dc3545; background: #f8d7da; display: none; }
+        .loading { margin-top: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; color: #666; display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="top">
+        <h2>Data Kluster</h2>
+        <a class="button" href="kluster_form.html">Tambah Data</a>
+    </div>
+
+    <div id="loading" class="loading">Memuat data...</div>
+    <div id="errorBox" class="error"></div>
+    <div id="emptyBox" class="empty" style="display:none;">Belum ada data kluster.</div>
+
+    <table id="klusterTable" style="display:none;">
+        <thead>
+        <tr>
+            <th style="width:120px;">KD</th>
+            <th>Uraian</th>
+        </tr>
+        </thead>
+        <tbody id="klusterBody">
+        </tbody>
+    </table>
+</div>
+
+<script>
+(async function () {
+    const loading = document.getElementById('loading');
+    const errorBox = document.getElementById('errorBox');
+    const emptyBox = document.getElementById('emptyBox');
+    const table = document.getElementById('klusterTable');
+    const tbody = document.getElementById('klusterBody');
+
+    function showError(msg) {
+        errorBox.textContent = msg || 'Gagal memuat data kluster.';
+        errorBox.style.display = 'block';
+    }
+
+    try {
+        loading.style.display = 'block';
+
+        const res = await fetch('API/get_kluster.php', { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (!res.ok) {
+            throw new Error('HTTP ' + res.status);
+        }
+
+        const payload = await res.json();
+        if (!payload || payload.ok !== true) {
+            throw new Error(payload && payload.error ? payload.error : 'Response API tidak valid.');
+        }
+
+        const data = Array.isArray(payload.data) ? payload.data : [];
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            emptyBox.style.display = 'block';
+            table.style.display = 'none';
+            return;
+        }
+
+        for (const row of data) {
+            const kd = row && row.kd !== undefined && row.kd !== null ? String(row.kd) : '';
+            const uraian = row && row.uraian !== undefined && row.uraian !== null ? String(row.uraian) : '';
+
+            const tr = document.createElement('tr');
+            const tdKd = document.createElement('td');
+            const tdUraian = document.createElement('td');
+
+            tdKd.textContent = kd;
+            tdUraian.textContent = uraian;
+
+            tr.appendChild(tdKd);
+            tr.appendChild(tdUraian);
+            tbody.appendChild(tr);
+        }
+
+        table.style.display = 'table';
+    } catch (e) {
+        showError('Gagal memuat data kluster. ' + (e && e.message ? e.message : ''));
+    } finally {
+        loading.style.display = 'none';
+    }
+})();
+</script>
+</body>
+</html>

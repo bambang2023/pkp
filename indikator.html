@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Data Indikator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        .card { max-width: 1200px; margin: auto; padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        h2 { margin: 0; }
+        a.button { display: inline-block; padding: 10px 16px; background: #0d6efd; color: #fff; text-decoration: none; border-radius: 6px; }
+        a.button:hover { background: #0b5ed7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #e5e5e5; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f7f7f7; }
+        .empty { margin-top: 16px; padding: 12px; border: 1px dashed #ddd; color: #666; }
+        a.button-edit {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #ffc107;
+            color: #212529;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        a.button-edit:hover { background: #e0a800; }
+        .error { margin-top: 16px; padding: 12px; border: 1px solid #dc3545; border-radius: 6px; color: #dc3545; background: #f8d7da; display: none; }
+        .loading { margin-top: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 6px; color: #666; display: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="top">
+        <h2>Data Indikator</h2>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <a class="button" href="indikator_form.html">Tambah Data</a>
+            <a class="button" href="kluster.html">Kembali ke Kluster</a>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Memuat data...</div>
+    <div id="errorBox" class="error"></div>
+    <div id="emptyBox" class="empty" style="display:none;">Belum ada data indikator.</div>
+
+    <table id="indikatorTable" style="display:none;">
+        <thead>
+        <tr>
+            <th>KD Indikator</th>
+            <th>Indikator</th>
+            <th>Kegiatan</th>
+            <th>DO</th>
+            <th>Cara Perhitungan</th>
+            <th>Sumber Data</th>
+            <th style="width: 80px;">Aksi</th>
+        </tr>
+        </thead>
+        <tbody id="indikatorBody"></tbody>
+    </table>
+</div>
+
+<script>
+(async function () {
+    const loading = document.getElementById('loading');
+    const errorBox = document.getElementById('errorBox');
+    const emptyBox = document.getElementById('emptyBox');
+    const table = document.getElementById('indikatorTable');
+    const tbody = document.getElementById('indikatorBody');
+
+    function showError(msg) {
+        errorBox.textContent = msg || 'Gagal memuat data indikator.';
+        errorBox.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    try {
+        loading.style.display = 'block';
+
+        // NOTE: API/get_indikator.php perlu dibuat di backend
+        const res = await fetch('API/get_indikator.php', { method: 'GET', headers: { 'Accept': 'application/json' } });
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}. Pastikan API/get_indikator.php sudah dibuat.`);
+        }
+
+        const payload = await res.json();
+        if (!payload || payload.ok !== true || !Array.isArray(payload.data)) {
+            throw new Error(payload?.error || 'Respons dari API tidak valid.');
+        }
+
+        const data = payload.data;
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            emptyBox.style.display = 'block';
+            table.style.display = 'none';
+            return;
+        }
+
+        for (const row of data) {
+            const kd_ind = row.kd_ind || '';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${escapeHtml(kd_ind)}</td>
+                <td>${escapeHtml(row.indikator || '')}</td>
+                <td>${escapeHtml(row.kegiatan || '')}</td>
+                <td>${escapeHtml(row.DO || '')}</td>
+                <td>${escapeHtml(row.formula || '')}</td>
+                <td>${escapeHtml(row.sumber_data || '')}</td>
+                <td>
+                    <a href="indikator_form.html?edit=${encodeURIComponent(kd_ind)}" class="button-edit">Edit</a>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        table.style.display = 'table';
+    } catch (e) {
+        showError('Gagal memuat data indikator. ' + (e?.message || ''));
+    } finally {
+        loading.style.display = 'none';
+    }
+})();
+</script>
+</body>
+</html>
