@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Input Kinerja Puskesmas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simple transition for accordion */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        /* Simple transition for modal */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+            
+            <!-- Header -->
+            <div class="mb-8 border-b pb-6">
+                <h1 class="text-3xl font-bold text-gray-700">Input Data Kinerja</h1>
+                <p class="text-gray-500 mt-1">Formulir untuk pengisian capaian indikator kinerja Puskesmas.</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Filter Puskesmas & Periode -->
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border rounded-lg bg-gray-50">
+                    <div>
+                        <label for="puskesmas" class="block text-sm font-medium text-gray-700 mb-1">Nama Puskesmas</label>
+                        <input type="text" id="puskesmas" value="Puskesmas Sehat Sentosa" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="tahun" class="block text-sm font-medium text-gray-700 mb-1">Tahun</label>
+                        <select id="tahun" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option>2024</option>
+                            <option>2025</option>
+                            <option>2026</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="periode" class="block text-sm font-medium text-gray-700 mb-1">Bulan / Triwulan</label>
+                        <select id="periode" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option>Januari</option>
+                            <option>Februari</option>
+                            <option>Maret</option>
+                            <option>Triwulan 1</option>
+                            <option>April</option>
+                            <option>...</option>
+                            <option>Triwulan 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Filter Kluster -->
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-gray-50">
+                    <div>
+                        <label for="filter-l0" class="block text-sm font-medium text-gray-700 mb-1">Kluster (Level 0)</label>
+                        <select id="filter-l0" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Semua Kluster</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-l1" class="block text-sm font-medium text-gray-700 mb-1">Kluster L1</label>
+                        <select id="filter-l1" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Semua L1</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-l2" class="block text-sm font-medium text-gray-700 mb-1">Kluster L2</label>
+                        <select id="filter-l2" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Semua L2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-l3" class="block text-sm font-medium text-gray-700 mb-1">Kluster L3</label>
+                        <select id="filter-l3" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                            <option value="">Semua L3</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Input Kinerja Section -->
+            <div id="kinerja-form-container" class="space-y-6">
+                <!-- Indikator items will be injected here by JavaScript -->
+                <div class="text-center p-8 border-2 border-dashed rounded-lg">
+                    <p class="text-gray-500">Pilih filter untuk menampilkan indikator kinerja.</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-10 pt-6 border-t flex justify-end">
+                <button id="save-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                    Simpan Data Kinerja
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center transform scale-95 modal-content">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Sukses!</h3>
+            <div class="mt-2">
+                <p class="text-sm text-gray-500">Data kinerja telah berhasil disimpan.</p>
+            </div>
+            <div class="mt-6">
+                <button id="close-modal-button" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+    // 4. DUMMY DATA INTEGRASI
+    const dataIndikator = [
+        {
+            "kd_ind": "1.01.01.01.01",
+            "indikator": "Kepatuhan Kebersihan Tangan",
+            "kegiatan": "Audit Kepatuhan",
+            "DO": "Persentase kepatuhan petugas dalam melakukan kebersihan tangan sesuai 5 momen.",
+            "formula": "(Jumlah tindakan kebersihan tangan yang sesuai / Jumlah peluang) x 100%",
+            "sumber_data": "Laporan Audit Internal"
+        },
+        {
+            "kd_ind": "1.01.01.01.02",
+            "indikator": "Kepatuhan Penggunaan APD",
+            "kegiatan": "Observasi Langsung",
+            "DO": "Persentase kepatuhan petugas dalam menggunakan Alat Pelindung Diri (APD) sesuai standar.",
+            "formula": "(Jumlah petugas patuh APD / Jumlah petugas diobservasi) x 100%",
+            "sumber_data": "Formulir Observasi"
+        },
+        {
+            "kd_ind": "1.02.01.01.01",
+            "indikator": "Waktu Tunggu Pelayanan Rawat Jalan",
+            "kegiatan": "Survei Waktu Tunggu",
+            "DO": "Rata-rata waktu yang dibutuhkan pasien dari mendaftar hingga mendapat pelayanan dokter.",
+            "formula": "Total waktu tunggu seluruh pasien / Jumlah pasien disurvei",
+            "sumber_data": "Survei Pasien"
+        },
+        {
+            "kd_ind": "2.01.01.01.01",
+            "indikator": "Cakupan Kunjungan Ibu Hamil K4",
+            "kegiatan": "Pelayanan ANC",
+            "DO": "Persentase ibu hamil yang mendapatkan pelayanan antenatal minimal 4 kali.",
+            "formula": "(Jumlah ibu hamil K4 / Jumlah sasaran ibu hamil) x 100%",
+            "sumber_data": "Register Kohort Ibu"
+        },
+        {
+            "kd_ind": "2.01.02.01.01",
+            "indikator": "Cakupan Imunisasi Dasar Lengkap (IDL)",
+            "kegiatan": "Pelayanan Imunisasi",
+            "DO": "Persentase bayi usia 12-23 bulan yang telah mendapat imunisasi dasar lengkap.",
+            "formula": "(Jumlah bayi IDL / Jumlah sasaran bayi) x 100%",
+            "sumber_data": "Register Kohort Bayi"
+        },
+        {
+            "kd_ind": "2.02.01.01.01",
+            "indikator": "Penemuan Kasus TB Paru BTA Positif",
+            "kegiatan": "Screening dan Diagnosis TB",
+            "DO": "Persentase penemuan kasus baru TB Paru BTA positif di antara target penemuan.",
+            "formula": "(Jumlah kasus baru TB BTA+ ditemukan / Target penemuan kasus) x 100%",
+            "sumber_data": "Register TB 05"
+        }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const filterL0 = document.getElementById('filter-l0');
+        const filterL1 = document.getElementById('filter-l1');
+        const filterL2 = document.getElementById('filter-l2');
+        const filterL3 = document.getElementById('filter-l3');
+        const container = document.getElementById('kinerja-form-container');
+
+        // --- Filter Logic ---
+        function getUniqueKeys(data, level) {
+            const keys = new Set();
+            data.forEach(item => {
+                const parts = item.kd_ind.split('.');
+                if (parts.length >= level) {
+                    keys.add(parts.slice(0, level).join('.'));
+                }
+            });
+            return Array.from(keys).sort();
+        }
+
+        function populateSelect(selectElement, options, placeholder) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                selectElement.appendChild(opt);
+            });
+        }
+
+        function populateFilters() {
+            const l0Keys = getUniqueKeys(dataIndikator, 1);
+            populateSelect(filterL0, l0Keys, 'Semua Kluster');
+            updateCascadingFilters();
+        }
+
+        function updateCascadingFilters(level = 0) {
+            const l0Value = filterL0.value;
+            const l1Value = filterL1.value;
+            const l2Value = filterL2.value;
+
+            const filteredL1 = dataIndikator.filter(d => !l0Value || d.kd_ind.startsWith(l0Value + '.'));
+            const l1Keys = getUniqueKeys(filteredL1, 2);
+            if (level <= 0) populateSelect(filterL1, l1Keys, 'Semua L1');
+
+            const filteredL2 = filteredL1.filter(d => !l1Value || d.kd_ind.startsWith(l1Value + '.'));
+            const l2Keys = getUniqueKeys(filteredL2, 3);
+            if (level <= 1) populateSelect(filterL2, l2Keys, 'Semua L2');
+
+            const filteredL3 = filteredL2.filter(d => !l2Value || d.kd_ind.startsWith(l2Value + '.'));
+            const l3Keys = getUniqueKeys(filteredL3, 4);
+            if (level <= 2) populateSelect(filterL3, l3Keys, 'Semua L3');
+            
+            renderIndikator();
+        }
+
+        filterL0.addEventListener('change', () => updateCascadingFilters(0));
+        filterL1.addEventListener('change', () => updateCascadingFilters(1));
+        filterL2.addEventListener('change', () => updateCascadingFilters(2));
+        filterL3.addEventListener('change', () => updateCascadingFilters(3));
+
+        // --- Render Logic ---
+        function renderIndikator() {
+            const l0 = filterL0.value;
+            const l1 = filterL1.value;
+            const l2 = filterL2.value;
+            const l3 = filterL3.value;
+
+            const filteredData = dataIndikator.filter(item => {
+                return (!l0 || item.kd_ind.startsWith(l0)) &&
+                       (!l1 || item.kd_ind.startsWith(l1)) &&
+                       (!l2 || item.kd_ind.startsWith(l2)) &&
+                       (!l3 || item.kd_ind.startsWith(l3));
+            });
+
+            container.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-8 border-2 border-dashed rounded-lg">
+                        <p class="text-gray-500">Tidak ada indikator yang cocok dengan filter yang dipilih.</p>
+                    </div>`;
+                return;
+            }
+
+            filteredData.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'border rounded-lg shadow-sm overflow-hidden bg-white';
+                card.innerHTML = `
+                    <div class="p-4 bg-gray-50 border-b">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-lg text-teal-700">${item.indikator}</p>
+                                <p class="text-sm text-gray-500 font-mono">${item.kd_ind}</p>
+                            </div>
+                            <button class="toggle-details text-sm text-blue-600 hover:text-blue-800 font-medium" data-target="details-${index}">
+                                Lihat Detail
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Accordion Content -->
+                    <div id="details-${index}" class="accordion-content bg-blue-50/50">
+                        <div class="p-4 border-b text-sm text-gray-600 space-y-2">
+                            <p><strong>Kegiatan:</strong> ${item.kegiatan}</p>
+                            <p><strong>Definisi Operasional (DO):</strong> ${item.DO}</p>
+                            <p><strong>Formula:</strong> ${item.formula}</p>
+                            <p><strong>Sumber Data:</strong> ${item.sumber_data}</p>
+                        </div>
+                    </div>
+
+                    <!-- Input Fields -->
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label for="numerator-${index}" class="block text-sm font-medium text-gray-700">Capaian (Numerator)</label>
+                            <input type="number" id="numerator-${index}" data-index="${index}" class="numerator-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label for="denominator-${index}" class="block text-sm font-medium text-gray-700">Target (Denominator)</label>
+                            <input type="number" id="denominator-${index}" data-index="${index}" class="denominator-input mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Hasil (%)</label>
+                            <div id="result-${index}" class="mt-1 w-full p-2 bg-gray-100 border rounded-md text-center font-bold text-gray-700">
+                                0.00
+                            </div>
+                        </div>
+                        <div>
+                            <label for="bukti-${index}" class="block text-sm font-medium text-gray-700">Unggah/Catatan Bukti</label>
+                            <input type="file" id="bukti-${index}" class="text-sm mt-1 w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            attachEventListeners();
+        }
+
+        function attachEventListeners() {
+            // Accordion toggles
+            document.querySelectorAll('.toggle-details').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const content = document.getElementById(targetId);
+                    const isExpanded = content.style.maxHeight && content.style.maxHeight !== '0px';
+                    
+                    if (isExpanded) {
+                        content.style.maxHeight = '0px';
+                        button.textContent = 'Lihat Detail';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        button.textContent = 'Sembunyikan Detail';
+                    }
+                });
+            });
+
+            // Real-time calculation
+            const calculate = (index) => {
+                const numerator = parseFloat(document.getElementById(`numerator-${index}`).value) || 0;
+                const denominator = parseFloat(document.getElementById(`denominator-${index}`).value) || 0;
+                const resultEl = document.getElementById(`result-${index}`);
+
+                if (denominator === 0) {
+                    resultEl.textContent = 'N/A';
+                    return;
+                }
+
+                const percentage = (numerator / denominator) * 100;
+                resultEl.textContent = percentage.toFixed(2);
+            };
+
+            document.querySelectorAll('.numerator-input, .denominator-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    calculate(e.target.dataset.index);
+                });
+            });
+        }
+
+        // --- Modal Logic ---
+        const saveButton = document.getElementById('save-button');
+        const modal = document.getElementById('success-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+
+        const showModal = () => {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const hideModal = () => {
+            modal.classList.add('opacity-0');
+            modal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        saveButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Here you would typically gather form data and send it to a server
+            console.log("Simpan data dipicu.");
+            showModal();
+        });
+
+        closeModalButton.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                hideModal();
+            }
+        });
+
+        // Initial load
+        populateFilters();
+    });
+</script>
+
+</body>
+</html>

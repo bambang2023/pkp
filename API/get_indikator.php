@@ -7,6 +7,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 try {
     $kd_ind_filter = $_GET['kd_ind'] ?? null;
+    $kd_kluster_filter = $_GET['kd_kluster'] ?? null;
 
     if ($kd_ind_filter !== null) {
         // Mode 1: Ambil satu indikator berdasarkan kd_ind
@@ -29,6 +30,20 @@ try {
             http_response_code(404);
             echo json_encode(['ok' => false, 'error' => 'Indikator tidak ditemukan'], JSON_UNESCAPED_UNICODE);
         }
+    } elseif ($kd_kluster_filter !== null && $kd_kluster_filter !== '') {
+        $stmt = $pdo->prepare(
+            "SELECT kd_3, kd_ind, indikator, kegiatan, DO, formula, sumber_data
+             FROM indikator
+             WHERE kd_ind LIKE :kd_prefix
+             ORDER BY kd_ind"
+        );
+        $stmt->execute([':kd_prefix' => $kd_kluster_filter . '.%']);
+        $rows = $stmt->fetchAll();
+
+        echo json_encode([
+            'ok' => true,
+            'data' => $rows,
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         // Mode 2: Ambil semua indikator (perilaku default)
         $stmt = $pdo->query("SELECT kd_3, kd_ind, indikator, kegiatan, DO, formula, sumber_data FROM indikator ORDER BY kd_ind");

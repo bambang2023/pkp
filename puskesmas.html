@@ -38,6 +38,57 @@
             font-weight: 600;
         }
 
+        .navbar-menu {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .nav-link {
+            color: #bbdefb;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link:hover { background-color: rgba(255,255,255,0.1); color: white; }
+
+        /* Dropdown Menu */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown .nav-link {
+            cursor: pointer;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 240px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 10;
+            border-radius: 8px;
+            margin-top: 8px;
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-content a:hover { background-color: #f1f1f1; }
+        .dropdown:hover .dropdown-content { display: block; }
+
         .navbar-brand span {
             color: #90caf9;
             font-size: 1.5rem;
@@ -123,67 +174,22 @@
             padding: 2rem;
         }
 
-        .section-card {
+        .info-card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-            overflow: hidden;
+            padding: 2rem;
         }
-
-        .section-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #eee;
+        .info-card h2 {
+            font-size: 1.5rem;
+            color: #1a237e;
+            margin-bottom: 0.5rem;
         }
-
-        .section-header h2 {
-            font-size: 1.1rem;
-            color: #333;
+        .info-card p {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.6;
         }
-
-        .section-body { padding: 1.5rem; }
-
-        .links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .kluster-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 24px;
-            overflow: hidden;
-        }
-
-        .kluster-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #eee;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .quick-link {
-            display: flex;
-            align-items: center;
-            padding: 1.25rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .quick-link:hover {
-            background: #e3f2fd;
-            border-color: #90caf9;
-            transform: translateY(-2px);
-        }
-
-        .quick-link .link-icon { font-size: 1.5rem; margin-right: 1rem; color: #0d47a1; }
-        .quick-link .link-label { font-size: 0.9rem; font-weight: 600; }
 
         .footer-info {
             text-align: center;
@@ -193,39 +199,6 @@
             border-top: 1px solid #e0e0e0;
             margin-top: 2rem;
         }
-
-        /* Dropdown Submenu */
-        .dropdown-container {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .submenu-select {
-            flex-grow: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            background-color: white;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        .submenu-select:focus {
-            outline: none;
-            border-color: #0d47a1;
-        }
-
-        .btn-go {
-            padding: 12px 24px;
-            background-color: #0d47a1;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
     </style>
 </head>
 <body>
@@ -234,6 +207,12 @@
         <div class="navbar-brand">
             <span>&#9733;</span>
             <span>PKP Jawa Timur</span>
+        </div>
+        <div class="navbar-menu">
+            <a href="puskesmas.html" class="nav-link">Profil</a>
+            <a href="input_kinerja.html" class="nav-link">Input Kinerja</a>
+            <a href="data_kinerja.html" class="nav-link">Data Kinerja</a>
+            <a href="puskesmas_laporan.html" class="nav-link">Laporan</a>
         </div>
         <div class="navbar-user">
             <div class="user-info">
@@ -245,44 +224,13 @@
         </div>
     </nav>
 
-    <div id="loadingState" class="loading-state" style="display:block;">
-        <div class="spinner"></div>
-        <p>Memuat data dashboard...</p>
-    </div>
-
-    <div id="errorState" class="error-state" style="display:none;">
-        <div class="error-icon">&#9888;</div>
-        <p id="errorMessage">Terjadi kesalahan.</p>
-        <button onclick="location.reload()" style="margin-top:1rem;padding:10px 24px;background:#0d47a1;color:white;border:none;border-radius:6px;cursor:pointer;">Coba Lagi</button>
-    </div>
-
-    <div id="mainContent" class="main-content" style="display:none;">
-        <div id="klusterContainer">
-            <!-- Kartu Kluster dan Sub-menu akan dimuat di sini -->
-            <p class="empty-state" style="display:none;" id="emptyKluster">Tidak ada data kluster yang dapat ditampilkan.</p>
-        </div>
-
-        <div class="footer-info">
-            &copy; 2024 Penilaian Kinerja Puskesmas - Jawa Timur | Sistem Monitoring Puskesmas
-        </div>
-    </div>
-
     <script>
         async function loadDashboard() {
-            const loadingEl = document.getElementById('loadingState');
-            const errorEl = document.getElementById('errorState');
-            const errorMsg = document.getElementById('errorMessage');
-            const mainEl = document.getElementById('mainContent');
-
             try {
-                loadingEl.style.display = 'block';
-                errorEl.style.display = 'none';
-                mainEl.style.display = 'none';
-
                 const userRes = await fetch('API/get_current_user.php');
                 const userData = await userRes.json();
 
-                if (!userData.ok) {
+                if (!userData.ok || !userData.user) {
                     throw new Error(userData.error || 'Sesi tidak valid. Silakan login ulang.');
                 }
 
@@ -293,81 +241,15 @@
                     return;
                 }
 
+                // Tampilkan data user di navbar
                 document.getElementById('displayName').textContent = user.nama;
-                document.getElementById('displayRole').textContent = user.puskesmas || user.role;
+                document.getElementById('displayRole').textContent = 'Puskesmas: ' + user.puskesmas || user.role;
                 document.getElementById('displayAvatar').textContent = user.nama.charAt(0).toUpperCase();
 
-                // Ambil data kluster dan kluster_l1 secara bersamaan
-                const [klusterRes, klusterL1Res] = await Promise.all([
-                    fetch('API/get_kluster.php'),
-                    fetch('API/get_kluster_l1.php')
-                ]);
-
-                const klusterData = await klusterRes.json();
-                const klusterL1Data = await klusterL1Res.json();
-
-                const klusters = (klusterData.ok && Array.isArray(klusterData.data)) ? klusterData.data : [];
-                const klustersL1 = (klusterL1Data.ok && Array.isArray(klusterL1Data.data)) ? klusterL1Data.data : [];
-
-                const container = document.getElementById('klusterContainer');
-                container.innerHTML = ''; // Bersihkan container
-
-                if (klusters.length === 0) {
-                    document.getElementById('emptyKluster').style.display = 'block';
-                } else {
-                    klusters.forEach(kluster => {
-                        const subMenus = klustersL1.filter(l1 => l1.kd_0 === kluster.kd);
-
-                        let subMenuHtml = '';
-                        if (subMenus.length > 0) {
-                            const selectId = `select-kluster-${kluster.kd}`;
-                            subMenuHtml += `<div class="dropdown-container">`;
-                            subMenuHtml += `<select id="${selectId}" class="submenu-select">`;
-                            subMenuHtml += `<option value="">-- Pilih Sub Menu Penilaian --</option>`;
-                            subMenus.forEach(subMenu => {
-                                const url = `penilaian.html?kd_1=${subMenu.kd_1}`;
-                                subMenuHtml += `<option value="${url}">${escapeHtml(subMenu.uraian)}</option>`;
-                            });
-                            subMenuHtml += `</select>`;
-                            subMenuHtml += `<button class="btn-go" onclick="navigateToSelected('${selectId}')">Buka</button>`;
-                            subMenuHtml += `</div>`;
-                        } else {
-                            subMenuHtml = '<p style="color:#888; font-size:0.9rem;">Belum ada sub-menu untuk kluster ini.</p>';
-                        }
-
-                        container.innerHTML += `
-                            <div class="kluster-card">
-                                <div class="kluster-header">${escapeHtml(kluster.uraian)}</div>
-                                <div class="section-body">${subMenuHtml}</div>
-                            </div>
-                        `;
-                    });
-                }
-
-                loadingEl.style.display = 'none';
-                mainEl.style.display = 'block';
-
             } catch (e) {
-                loadingEl.style.display = 'none';
-                errorEl.style.display = 'block';
-                errorMsg.textContent = e.message || 'Terjadi kesalahan saat memuat data.';
                 if (e.message.includes('Sesi tidak valid')) {
                     setTimeout(() => window.location.href = 'index.html', 3000);
                 }
-            }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        function navigateToSelected(selectId) {
-            const select = document.getElementById(selectId);
-            if (select && select.value) {
-                window.location.href = select.value;
             }
         }
 

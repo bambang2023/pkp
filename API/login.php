@@ -23,7 +23,11 @@ if ($username === '' || $password === '') {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, nama, nip, password, role, provinsi, kabupaten, puskesmas FROM users WHERE nip = ?");
+    $stmt = $pdo->prepare("SELECT u.id, u.nama, u.nip, u.password, u.role, u.provinsi, u.kabupaten,
+                                  u.puskesmas AS puskesmas_kode, p.nama AS puskesmas_nama
+                           FROM users u
+                           LEFT JOIN ref_puskesmas p ON p.kode = u.puskesmas
+                           WHERE u.nip = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
@@ -46,7 +50,8 @@ try {
     $_SESSION['role']       = $user['role'];
     $_SESSION['provinsi']   = $user['provinsi'];
     $_SESSION['kabupaten']  = $user['kabupaten'];
-    $_SESSION['puskesmas']  = $user['puskesmas'];
+    $_SESSION['puskesmas_kode'] = $user['puskesmas_kode'];
+    $_SESSION['puskesmas']  = $user['puskesmas_nama'] ?: $user['puskesmas_kode'];
 
     // Redirect ke dashboard berdasarkan role
     $redirectMap = [

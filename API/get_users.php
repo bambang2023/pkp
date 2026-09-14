@@ -20,7 +20,12 @@ if (!isset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['nama'])) {
 }
 
 try {
-    $stmt = $pdo->query("SELECT id, nama, nip, role, provinsi, kabupaten, puskesmas FROM users ORDER BY role, nama ASC");
+    $stmt = $pdo->query("SELECT u.id, u.nama, u.nip, u.role, u.provinsi, u.kabupaten,
+                                u.puskesmas AS puskesmas_kode,
+                                COALESCE(p.nama, u.puskesmas) AS puskesmas
+                         FROM users u
+                         LEFT JOIN ref_puskesmas p ON p.kode = u.puskesmas
+                         ORDER BY u.role, u.nama ASC");
     $data = $stmt->fetchAll();
 
     echo json_encode([

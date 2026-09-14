@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Input Kinerja Puskesmas</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            color: white;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .navbar-menu {
+            flex-grow: 1;
+            text-align: right;
+        }
+
+        .nav-link {
+            color: #bbdefb;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link:hover { background-color: rgba(255,255,255,0.1); color: white; }
+
+        /* Dropdown Menu */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .kinerja-form {
+            width: 100%;
+            max-width: 1400px;
+            margin: auto;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-fields {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-field input,
+        .form-field select {
+            width: 100%;
+            padding: 10px;
+            background: #e7d2b0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #submitBtn {
+            display: block;
+            margin: 1.5rem 0 0 auto;
+            padding: 12px 28px;
+            border: 0;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0d6efd, #084298);
+            box-shadow: 0 5px 12px rgba(13, 110, 253, 0.25);
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        #submitBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(13, 110, 253, 0.35);
+        }
+
+        #submitBtn:focus-visible {
+            outline: 3px solid rgba(13, 110, 253, 0.3);
+            outline-offset: 3px;
+        }
+
+        #submitBtn:disabled {
+            cursor: wait;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 900px) {
+            .form-fields {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 600px) {
+            .form-fields {
+                grid-template-columns: 1fr;
+            }
+
+            #submitBtn {
+                width: 100%;
+            }
+        }
+
+        </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-menu">
+            <a href="puskesmas.html" class="nav-link">Kembali</a>
+        </div>
+    </nav>
+
+    <main>
+        <div class="=container">
+            <div class="grid grid-cols-1 gap-4"> 
+            <form id="kinerjaForm" class="kinerja-form">
+                <h1>Form Input Kinerja Puskesmas</h1>
+                <div id="errorBox" class="error" ></div>
+                <div class="form-fields">
+                    <div class="form-field">
+                        <label for="puskesmas">Nama Puskesmas:</label>
+                        <input type="text" id="puskesmas" name="puskesmas" value="Memuat nama puskesmas..." readonly required>
+                    </div>
+                    <div class="form-field">
+                        <label for="bulan">Bulan:</label>
+                        <select id="bulan" name="bulan" required>
+                            <option value="">Pilih bulan</option>
+                            <option value="01">Januari</option>
+                            <option value="02">Februari</option>
+                            <option value="03">Maret</option>
+                            <option value="04">April</option>
+                            <option value="05">Mei</option>
+                            <option value="06">Juni</option>
+                            <option value="07">Juli</option>
+                            <option value="08">Agustus</option>
+                            <option value="09">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="kluster">Kluster:</label>
+                        <select id="kluster" name="kd_kluster" required>
+                            <option value="">Memuat kluster...</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="kd">Kode indikator:</label>
+                        <select id="kd" name="kd" required disabled>
+                            <option value="">Pilih kluster terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="target">Target:</label>
+                        <input type="number" id="target" name="target" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="satuan">Satuan Sasaran:</label>
+                        <select id="satuan" name="satuan" required disabled>
+                            <option value="">Pilih kluster terlebih dahulu</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="sasaran">Total Sasaran:</label>
+                        <input type="text" id="sasaran" name="sasaran" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="target_sasaran">Target Sasaran:</label>
+                        <input type="number" id="target_sasaran" name="target_sasaran" step="any" required readonly>
+                    </div>
+                    <div class="form-field">
+                        <label for="capaian">Capaian:</label>
+                        <input type="number" id="capaian" name="capaian" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="hasil_riil">Hasil Riil:</label>
+                        <input type="number" id="hasil_riil" name="hasil_riil" step="any" required readonly>
+                    </div>
+                    <div class="form-field">
+                        <label for="hasil_kinerja">Hasil Kinerja:</label>
+                        <input type="number" id="hasil_kinerja" name="hasil_kinerja" step="any" required readonly>
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn">Simpan &#8594;</button>
+            </form></div>
+            </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const puskesmasInput = document.getElementById('puskesmas');
+            const klusterSelect = document.getElementById('kluster');
+            const indikatorSelect = document.getElementById('kd');
+            const satuanSelect = document.getElementById('satuan');
+            const targetInput = document.getElementById('target');
+            const sasaranInput = document.getElementById('sasaran');
+            const targetSasaranInput = document.getElementById('target_sasaran');
+            const capaianInput = document.getElementById('capaian');
+            const hasilRiilInput = document.getElementById('hasil_riil');
+            const hasilKinerjaInput = document.getElementById('hasil_kinerja');
+            const form = document.getElementById('kinerjaForm');
+            const errorBox = document.getElementById('errorBox');
+            const submitBtn = document.getElementById('submitBtn');
+
+            const satuanByKluster = {
+                '1': ['Data', 'Dokumen', 'Laporan', 'Laporan data', 'Notulen', 'Sertifikat'],
+                '2': [
+                    'baduta', 'balita', 'balita gizi kurang', 'balita usia 0-59 bulan',
+                    'balita usia 6-59 bulan', 'bayi', 'bayi, baduta', 'bufas', 'bulin',
+                    'bumil', 'bumil, bulin', 'neonatus', 'persen', 'remaja putri', 'sekolah'
+                ],
+                '3': ['persen', 'Lansia'],
+                '4': ['dokumen', 'kasus', 'orang', 'pasien', 'persen', 'sekolah'],
+                '5': ['desa', 'dokumen', 'fungsi', 'jenis pemeriksaan', 'menit', 'pasien', 'pelayanan', 'peta', 'resep', 'sertifikat']
+            };
+
+            function resetSatuan(kdKluster) {
+                const satuan = satuanByKluster[kdKluster] || [];
+                satuanSelect.innerHTML = '<option value="">Pilih satuan sasaran</option>';
+                satuan.forEach(item => satuanSelect.add(new Option(item, item)));
+                satuanSelect.disabled = satuan.length === 0;
+            }
+
+            function formatDecimal(value) {
+                return Number(value.toFixed(2));
+            }
+
+            function updateDerivedValues() {
+                const target = Number(targetInput.value);
+                const totalSasaran = Number(sasaranInput.value);
+                const capaian = Number(capaianInput.value);
+
+                if (targetInput.value === '' || sasaranInput.value === '' || !Number.isFinite(target) || !Number.isFinite(totalSasaran)) {
+                    targetSasaranInput.value = '';
+                } else {
+                    targetSasaranInput.value = formatDecimal(target * totalSasaran / 100);
+                }
+
+                if (sasaranInput.value === '' || !Number.isFinite(totalSasaran) || totalSasaran === 0 || !Number.isFinite(capaian)) {
+                    hasilRiilInput.value = '';
+                } else {
+                    hasilRiilInput.value = formatDecimal(capaian / totalSasaran * 100);
+                }
+
+                const targetSasaran = Number(targetSasaranInput.value);
+                if (!Number.isFinite(targetSasaran) || targetSasaran <= 0 || !Number.isFinite(capaian)) {
+                    hasilKinerjaInput.value = '';
+                } else {
+                    hasilKinerjaInput.value = formatDecimal(Math.min(capaian / targetSasaran * 100, 100));
+                }
+            }
+
+            function resetIndikator(message, disabled = true) {
+                indikatorSelect.innerHTML = `<option value="">${message}</option>`;
+                indikatorSelect.disabled = disabled;
+            }
+
+            async function loadIndikator(kdKluster) {
+                if (!kdKluster) {
+                    resetIndikator('Pilih kluster terlebih dahulu');
+                    return;
+                }
+
+                resetIndikator('Memuat indikator...');
+
+                try {
+                    const response = await fetch(
+                        `API/get_indikator.php?kd_kluster=${encodeURIComponent(kdKluster)}`
+                    );
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const payload = await response.json();
+                    if (!payload.ok || !Array.isArray(payload.data)) {
+                        throw new Error(payload.error || 'Data indikator tidak valid.');
+                    }
+
+                    if (payload.data.length === 0) {
+                        resetIndikator('Tidak ada indikator pada kluster ini');
+                        return;
+                    }
+
+                    indikatorSelect.innerHTML = '<option value="">Pilih indikator</option>';
+                    payload.data.forEach(indikator => {
+                        indikatorSelect.add(new Option(
+                            `${indikator.kd_ind} - ${indikator.indikator}`,
+                            indikator.kd_ind
+                        ));
+                    });
+                    indikatorSelect.disabled = false;
+                } catch (error) {
+                    resetIndikator('Gagal memuat indikator');
+                    console.error('Gagal memuat data indikator:', error);
+                }
+            }
+
+            klusterSelect.addEventListener('change', () => {
+                loadIndikator(klusterSelect.value);
+                resetSatuan(klusterSelect.value);
+            });
+
+            targetInput.addEventListener('input', updateDerivedValues);
+            sasaranInput.addEventListener('input', updateDerivedValues);
+            capaianInput.addEventListener('input', updateDerivedValues);
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                errorBox.style.display = 'none';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Menyimpan...';
+
+                const formData = Object.fromEntries(new FormData(form).entries());
+
+                try {
+                    const response = await fetch('API/save_data_kinerja.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+                    const payload = await response.json();
+
+                    if (!response.ok || payload.ok !== true) {
+                        throw new Error(payload.error || 'Gagal menyimpan data kinerja.');
+                    }
+
+                    alert(payload.message);
+                    form.reset();
+                    resetIndikator('Pilih kluster terlebih dahulu');
+                    resetSatuan('');
+                    updateDerivedValues();
+                } catch (error) {
+                    errorBox.textContent = error.message || 'Gagal menyimpan data kinerja.';
+                    errorBox.style.display = 'block';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Simpan';
+                }
+            });
+
+            try {
+                const response = await fetch('API/get_current_user.php');
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const payload = await response.json();
+                if (!payload.ok || !payload.user || !payload.user.puskesmas) {
+                    throw new Error(payload.error || 'Nama puskesmas tidak tersedia.');
+                }
+
+                puskesmasInput.value = payload.user.puskesmas;
+            } catch (error) {
+                puskesmasInput.value = '';
+                puskesmasInput.placeholder = 'Nama puskesmas tidak tersedia';
+                console.error('Gagal memuat nama puskesmas:', error);
+            }
+
+            try {
+                const response = await fetch('API/get_kluster.php');
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const payload = await response.json();
+                if (!payload.ok || !Array.isArray(payload.data)) {
+                    throw new Error(payload.error || 'Data kluster tidak valid.');
+                }
+
+                klusterSelect.innerHTML = '<option value="">Pilih kluster</option>';
+                payload.data.forEach(kluster => {
+                    const option = new Option(
+                        `${kluster.kd} - ${kluster.uraian}`,
+                        kluster.kd
+                    );
+                    klusterSelect.add(option);
+                });
+            } catch (error) {
+                klusterSelect.innerHTML = '<option value="">Gagal memuat kluster</option>';
+                klusterSelect.disabled = true;
+                console.error('Gagal memuat data kluster:', error);
+            }
+        });
+    </script>
+</body>
+</html>

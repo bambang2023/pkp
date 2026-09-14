@@ -20,6 +20,14 @@ if (!isset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['nama'])) {
     exit;
 }
 
+// Ambil nama puskesmas dari tabel referensi berdasarkan kode yang tersimpan di users.
+$stmt = $pdo->prepare("SELECT u.puskesmas AS puskesmas_kode, p.nama AS puskesmas_nama
+                       FROM users u
+                       LEFT JOIN ref_puskesmas p ON p.kode = u.puskesmas
+                       WHERE u.id = ?");
+$stmt->execute([(int)$_SESSION['user_id']]);
+$puskesmas = $stmt->fetch();
+
 // Kembalikan data user
 echo json_encode([
     'ok'        => true,
@@ -30,6 +38,7 @@ echo json_encode([
         'role'      => $_SESSION['role'],
         'provinsi'  => $_SESSION['provinsi'] ?? '',
         'kabupaten' => $_SESSION['kabupaten'] ?? '',
-        'puskesmas' => $_SESSION['puskesmas'] ?? '',
+        'puskesmas_kode' => $puskesmas['puskesmas_kode'] ?? $_SESSION['puskesmas_kode'] ?? '',
+        'puskesmas' => $puskesmas['puskesmas_nama'] ?? $_SESSION['puskesmas'] ?? '',
     ],
 ], JSON_UNESCAPED_UNICODE);

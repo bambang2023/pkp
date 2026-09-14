@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Kinerja</title>
+    <style>
+        :root { color-scheme: light; font-family: Arial, sans-serif; }
+        body { margin: 0; background: #f0f2f5; color: #212529; }
+        .navbar { background: linear-gradient(135deg, #1a237e, #0d47a1); padding: 18px 28px; }
+        .navbar a { color: #fff; text-decoration: none; font-weight: 600; }
+        .container { max-width: 1500px; margin: 28px auto; padding: 0 20px; }
+        .panel { background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        h1 { margin: 0; font-size: 24px; }
+        .button { display: inline-block; padding: 10px 16px; border-radius: 6px; color: #fff; background: #0d6efd; text-decoration: none; }
+        .filter { padding: 9px; border: 1px solid #ced4da; border-radius: 5px; }
+        .table-wrap { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1050px; }
+        th, td { border: 1px solid #dee2e6; padding: 9px 10px; text-align: left; white-space: nowrap; }
+        th { background: #e9ecef; }
+        .status { margin-top: 16px; padding: 12px; border-radius: 6px; }
+        .error { color: #842029; background: #f8d7da; border: 1px solid #f5c2c7; }
+        .empty { color: #664d03; background: #fff3cd; border: 1px solid #ffecb5; }
+        .number { text-align: right; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"><a href="puskesmas.html">PKP Jawa Timur</a></nav>
+    <main class="container">
+        <section class="panel">
+            <div class="toolbar">
+                <h1>Data Kinerja</h1>
+                <div>
+                    <select id="bulanFilter" class="filter" aria-label="Filter bulan">
+                        <option value="">Semua bulan</option>
+                        <option value="01">Januari</option>
+                        <option value="02">Februari</option>
+                        <option value="03">Maret</option>
+                        <option value="04">April</option>
+                        <option value="05">Mei</option>
+                        <option value="06">Juni</option>
+                        <option value="07">Juli</option>
+                        <option value="08">Agustus</option>
+                        <option value="09">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+                    <a class="button" href="input_kinerja.html">Input Kinerja</a>
+                </div>
+            </div>
+            <div id="status" class="status" hidden></div>
+            <div class="table-wrap">
+                <table id="dataTable" hidden>
+                    <thead><tr>
+                        <th>Bulan</th><th>Kode Indikator</th><th>Target</th><th>Satuan</th>
+                        <th>Total Sasaran</th><th>Target Sasaran</th><th>Capaian</th>
+                        <th>Hasil Riil</th><th>Hasil Kinerja</th>
+                    </tr></thead>
+                    <tbody id="dataBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script>
+        const monthNames = {
+            '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
+            '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Agustus',
+            '09': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
+        };
+        const statusBox = document.getElementById('status');
+        const table = document.getElementById('dataTable');
+        const body = document.getElementById('dataBody');
+        const monthFilter = document.getElementById('bulanFilter');
+        let rows = [];
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
+        function showStatus(message, type) {
+            statusBox.textContent = message;
+            statusBox.className = `status ${type}`;
+            statusBox.hidden = false;
+        }
+
+        function render() {
+            const filtered = monthFilter.value
+                ? rows.filter(row => String(row.bulan).padStart(2, '0') === monthFilter.value)
+                : rows;
+            body.innerHTML = filtered.map(row => `
+                <tr>
+                    <td>${escapeHtml(monthNames[String(row.bulan).padStart(2, '0')] || row.bulan)}</td>
+                    <td>${escapeHtml(row.kdindikator)}</td>
+                    <td class="number">${escapeHtml(row.target)}</td>
+                    <td>${escapeHtml(row.sasaran)}</td>
+                    <td class="number">${escapeHtml(row.jml_sasaran)}</td>
+                    <td class="number">${escapeHtml(row.target_sasaran)}</td>
+                    <td class="number">${escapeHtml(row.capaian)}</td>
+                    <td class="number">${escapeHtml(row.hasil_riil)}</td>
+                    <td class="number">${escapeHtml(row.hasil_kinerja)}</td>
+                </tr>
+            `).join('');
+            table.hidden = filtered.length === 0;
+            if (filtered.length === 0) showStatus('Belum ada data kinerja untuk filter ini.', 'empty');
+            else statusBox.hidden = true;
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch('API/get_data_kinerja.php', { headers: { Accept: 'application/json' } });
+                const payload = await response.json();
+                if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'Gagal memuat data kinerja.');
+                rows = Array.isArray(payload.data) ? payload.data : [];
+                render();
+            } catch (error) {
+                table.hidden = true;
+                showStatus(error.message, 'error');
+            }
+        }
+
+        monthFilter.addEventListener('change', render);
+        loadData();
+    </script>
+</body>
+</html>
