@@ -44,10 +44,11 @@ try {
     // Start session
     session_start();
     session_regenerate_id(true);
+    $role = strtolower(trim((string) $user['role']));
     $_SESSION['user_id']    = (int)$user['id'];
     $_SESSION['nama']       = $user['nama'];
     $_SESSION['nip']        = $user['nip'];
-    $_SESSION['role']       = $user['role'];
+    $_SESSION['role']       = $role;
     $_SESSION['provinsi']   = $user['provinsi'];
     $_SESSION['kabupaten']  = $user['kabupaten'];
     $_SESSION['puskesmas_kode'] = $user['puskesmas_kode'];
@@ -59,7 +60,7 @@ try {
         'kabupaten' => '../index.html',
         'puskesmas' => '../puskesmas.html',
     ];
-    $redirect = $redirectMap[$user['role']] ?? '../index.html';
+    $redirect = $redirectMap[$role] ?? '../index.html';
     header('Location: ' . $redirect);
     exit;
 } catch (Throwable $e) {

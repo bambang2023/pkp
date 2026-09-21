@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Target Indikator</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            background: #f0f2f5;
+            color: #263238;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            min-height: 64px;
+            padding: 0 32px;
+            color: #fff;
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+        }
+
+        .navbar-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .navbar-menu {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .nav-link {
+            padding: 9px 14px;
+            color: #bbdefb;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-info { text-align: right; }
+        .user-name { font-weight: 600; font-size: 0.9rem; }
+        .user-role { color: #90caf9; font-size: 0.78rem; text-transform: capitalize; }
+        .user-avatar {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            color: #fff;
+            background: #42a5f5;
+            border-radius: 50%;
+            font-weight: 700;
+        }
+
+        .btn-logout {
+            padding: 8px 16px;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .main-content {
+            max-width: 1500px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .section-card {
+            overflow: hidden;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        h1 { margin: 0; font-size: 1.35rem; }
+        .badge {
+            padding: 5px 12px;
+            color: #0d47a1;
+            background: #e3f2fd;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #edf0f2;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.88rem;
+        }
+        th {
+            color: #455a64;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dfe3e6;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+        th:first-child, td:first-child { white-space: nowrap; }
+        td.month { text-align: right; white-space: nowrap; }
+        tbody tr:hover td { background: #f5f8fc; }
+        .state { padding: 32px 24px; color: #607d8b; text-align: center; }
+        .error { color: #b71c1c; background: #ffebee; }
+        .button-edit {
+            padding: 6px 12px;
+            color: #212529;
+            background: #ffc107;
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.82rem;
+        }
+        .button-edit:hover { background: #e0a800; }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 10;
+        }
+        .modal-backdrop[hidden] { display: none; }
+        .modal {
+            width: min(720px, 100%);
+            height: min(760px, calc(100vh - 32px));
+            max-height: calc(100vh - 32px);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 24px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+        }
+        .modal form {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.2rem; }
+        .modal-close {
+            padding: 4px 10px;
+            color: #546e7a;
+            background: transparent;
+            border: 1px solid #cfd8dc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        .form-grid {
+            display: grid;
+            flex: 1;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 2px 4px 2px 0;
+        }
+        .form-field { display: flex; flex-direction: column; gap: 6px; }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-field label { color: #455a64; font-size: 0.84rem; font-weight: 700; }
+        .form-field input {
+            width: 100%;
+            padding: 9px 10px;
+            box-sizing: border-box;
+            border: 1px solid #cfd8dc;
+            border-radius: 4px;
+        }
+        .form-field input[readonly] { background: #f5f7f8; }
+        .modal-actions {
+            display: flex;
+            flex-shrink: 0;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+            padding-top: 4px;
+            background: #fff;
+        }
+        .button-save, .button-cancel {
+            padding: 9px 16px;
+            border: 0;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .button-save { color: #fff; background: #0d6efd; }
+        .button-cancel { color: #37474f; background: #e9ecef; }
+        .modal-error { margin-top: 14px; color: #b71c1c; font-size: 0.88rem; }
+
+        @media (max-width: 800px) {
+            .navbar { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
+            .navbar-menu { order: 3; flex-basis: 100%; overflow-x: auto; justify-content: flex-start; }
+            .user-info { display: none; }
+            .main-content { padding: 16px; }
+            .section-header { align-items: flex-start; flex-direction: column; padding: 16px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-field.full { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">PKP Jawa Timur</div>
+        <div class="navbar-menu">
+            <a class="nav-link" href="provinsi.html">Dashboard</a>
+            <a class="nav-link" href="kluster.html">Kluster</a>
+            <a class="nav-link" href="indikator.html">Indikator</a>
+            <a class="nav-link active" href="target.html">Target</a>
+        </div>
+        <div class="navbar-user">
+            <div class="user-info">
+                <div class="user-name" id="displayName">-</div>
+                <div class="user-role" id="displayRole">-</div>
+            </div>
+            <div class="user-avatar" id="displayAvatar">P</div>
+            <button class="btn-logout" type="button" id="logoutButton">Logout</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <section class="section-card">
+            <div class="section-header">
+                <h1>Target Indikator</h1>
+                <span class="badge" id="targetCount">0 data</span>
+            </div>
+            <div id="loadingState" class="state">Memuat data target...</div>
+            <div id="errorState" class="state error" hidden></div>
+            <div id="emptyState" class="state" hidden>Belum ada data target.</div>
+            <div id="tableWrapper" class="table-wrapper" hidden>
+                <table>
+                    <thead>
+                        <tr id="targetHeader"></tr>
+                    </thead>
+                    <tbody id="targetBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="editModal" class="modal-backdrop" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <div class="modal-header">
+                <h2 id="editModalTitle">Edit Target</h2>
+                <button class="modal-close" type="button" id="closeModalButton" aria-label="Tutup">&times;</button>
+            </div>
+            <form id="targetForm">
+                <div id="targetFields" class="form-grid"></div>
+                <div id="modalError" class="modal-error" hidden></div>
+                <div class="modal-actions">
+                    <button class="button-cancel" type="button" id="cancelButton">Batal</button>
+                    <button class="button-save" type="submit" id="saveButton">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const monthColumns = [
+            'Januari', 'Pebruari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'Nopember', 'Desember'
+        ];
+        let targetRows = [];
+        let currentRole = '';
+
+        function escapeHtml(value) {
+            const element = document.createElement('div');
+            element.textContent = value ?? '-';
+            return element.innerHTML;
+        }
+
+        function escapeAttribute(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function showState(id) {
+            for (const stateId of ['loadingState', 'errorState', 'emptyState', 'tableWrapper']) {
+                document.getElementById(stateId).hidden = stateId !== id;
+            }
+        }
+
+        function renderTargetHeader() {
+            const columns = ['KD Indikator', 'Indikator', 'Target'];
+            if (currentRole === 'provinsi') {
+                columns.push('Aksi', ...monthColumns);
+            } else {
+                columns.push(...monthColumns, 'Aksi');
+            }
+            document.getElementById('targetHeader').innerHTML = columns
+                .map(column => `<th>${column}</th>`)
+                .join('');
+        }
+
+        async function loadTarget() {
+            try {
+                const userResponse = await fetch('API/get_current_user.php', { headers: { Accept: 'application/json' } });
+                const userPayload = await userResponse.json();
+                if (!userResponse.ok || userPayload.ok !== true || !['provinsi', 'puskesmas'].includes(userPayload.user.role)) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const user = userPayload.user;
+                currentRole = user.role;
+                renderTargetHeader();
+                document.getElementById('displayName').textContent = user.nama;
+                document.getElementById('displayRole').textContent = 'Role: ' + user.role;
+                document.getElementById('displayAvatar').textContent = user.nama.charAt(0).toUpperCase();
+
+                const response = await fetch('API/get_target.php', { headers: { Accept: 'application/json' } });
+                const payload = await response.json();
+                if (!response.ok || payload.ok !== true || !Array.isArray(payload.data)) {
+                    throw new Error(payload.error || 'Respons dari API tidak valid.');
+                }
+
+                targetRows = payload.data;
+                document.getElementById('targetCount').textContent = payload.data.length + ' data';
+                const body = document.getElementById('targetBody');
+                body.innerHTML = payload.data.map(row => `
+                    <tr>
+                        <td>${escapeHtml(row.kd_ind)}</td>
+                        <td>${escapeHtml(row.ind)}</td>
+                        <td class="month">${escapeHtml(row.target)}</td>
+                        ${currentRole === 'provinsi' ? `<td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>` : ''}
+                        ${monthColumns.map(month => `<td class="month">${escapeHtml(row[month])}</td>`).join('')}
+                        ${currentRole === 'puskesmas' ? `<td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>` : ''}
+                    </tr>
+                `).join('');
+
+                showState(payload.data.length ? 'tableWrapper' : 'emptyState');
+            } catch (error) {
+                document.getElementById('errorState').textContent = error.message || 'Gagal memuat data target.';
+                showState('errorState');
+            }
+        }
+
+        function createTargetFields(row) {
+            const fields = [
+                { key: 'kd_ind', label: 'KD Indikator', readonly: true, full: true },
+                { key: 'ind', label: 'Indikator', readonly: true, full: true },
+            ];
+            if (currentRole === 'provinsi') {
+                fields.push({ key: 'target', label: 'Target' });
+            } else {
+                fields.push({ key: 'target', label: 'Target', readonly: true });
+                fields.push(...monthColumns.map(month => ({ key: month, label: month })));
+            }
+            document.getElementById('targetFields').innerHTML = fields.map(field => `
+                <div class="form-field${field.full ? ' full' : ''}">
+                    <label for="target-${field.key}">${field.label}</label>
+                    <input id="target-${field.key}" name="${field.key}" type="text" value="${escapeAttribute(row[field.key])}"${field.readonly ? ' readonly' : ''}>
+                </div>
+            `).join('');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').hidden = true;
+            document.getElementById('modalError').hidden = true;
+        }
+
+        function openEditModal(row) {
+            createTargetFields(row);
+            document.getElementById('editModal').hidden = false;
+            document.getElementById(currentRole === 'provinsi' ? 'target-target' : 'target-Januari').focus();
+        }
+
+        async function updateTarget(event) {
+            event.preventDefault();
+            const saveButton = document.getElementById('saveButton');
+            const modalError = document.getElementById('modalError');
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            saveButton.disabled = true;
+            saveButton.textContent = 'Menyimpan...';
+            modalError.hidden = true;
+
+            try {
+                const response = await fetch('API/update_target.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.ok !== true) {
+                    throw new Error(payload.error || 'Gagal memperbarui data target.');
+                }
+                closeEditModal();
+                showState('loadingState');
+                await loadTarget();
+            } catch (error) {
+                modalError.textContent = error.message || 'Gagal memperbarui data target.';
+                modalError.hidden = false;
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Simpan Perubahan';
+            }
+        }
+
+        document.getElementById('targetBody').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-edit-id]');
+            if (!button) return;
+            const row = targetRows.find(item => String(item.kd_ind) === button.dataset.editId);
+            if (row) openEditModal(row);
+        });
+
+        document.getElementById('targetForm').addEventListener('submit', updateTarget);
+        document.getElementById('closeModalButton').addEventListener('click', closeEditModal);
+        document.getElementById('cancelButton').addEventListener('click', closeEditModal);
+
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            fetch('API/logout.php', { method: 'POST' }).finally(() => {
+                window.location.href = 'index.html';
+            });
+        });
+
+        loadTarget();
+    </script>
+</body>
+</html>

@@ -38,6 +38,25 @@
             font-weight: 600;
         }
 
+        .navbar-menu {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .nav-link {
+            color: #bbdefb;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+
         .navbar-brand span {
             color: #90caf9;
             font-size: 1.5rem;
@@ -113,10 +132,7 @@
             to { transform: rotate(360deg); }
         }
 
-        .error-state {
-            color: #d32f2f;
-        }
-
+        .error-state { color: #d32f2f; }
         .error-state .error-icon {
             font-size: 3rem;
             margin-bottom: 0.5rem;
@@ -351,30 +367,37 @@
             <span>&#9733;</span>
             <span>PKP Jawa Timur</span>
         </div>
+        <div class="navbar-menu">
+            <a href="provinsi.html" class="nav-link">Dashboard</a>
+            <a href="kluster.html" class="nav-link">Kluster</a>
+            <a href="indikator.html" class="nav-link">Indikator</a>
+            <a href="target.html" class="nav-link">Target</a>
+        </div>
         <div class="navbar-user">
             <div class="user-info">
                 <div class="user-name" id="displayName">-</div>
                 <div class="user-role" id="displayRole">-</div>
+                </div>
             <div class="user-avatar" id="displayAvatar">P</div>
             <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
     </nav>
 
     <!-- Loading State -->
-    <div id="loadingState" class="loading-state" style="display:block;">
+    <div id="loadingState" class="loading-state" >
         <div class="spinner"></div>
         <p>Memuat data dashboard...</p>
     </div>
 
     <!-- Error State -->
-    <div id="errorState" class="error-state" style="display:none;">
+    <div id="errorState" class="error-state" >
         <div class="error-icon">&#9888;</div>
         <p id="errorMessage">Terjadi kesalahan.</p>
-        <button onclick="location.reload()" style="margin-top:1rem;padding:10px 24px;background:#0d47a1;color:white;border:none;border-radius:6px;cursor:pointer;">Coba Lagi</button>
+        <button onclick="location.reload()" >Coba Lagi</button>
     </div>
 
     <!-- Main Content -->
-    <div id="mainContent" class="main-content" style="display:none;">
+    <div id="mainContent" class="main-content">
 
         <!-- Stats -->
         <div class="stats-grid">
@@ -382,18 +405,22 @@
                 <div class="stat-icon">&#127970;</div>
                 <div class="stat-number" id="totalProvinsi">-</div>
                 <div class="stat-label">Provinsi</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-icon">&#127963;</div>
                 <div class="stat-number" id="totalKabupaten">-</div>
                 <div class="stat-label">Kabupaten</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-icon">&#127973;</div>
                 <div class="stat-number" id="totalPuskesmas">-</div>
                 <div class="stat-label">Puskesmas</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-icon">&#128101;</div>
                 <div class="stat-number" id="totalUsers">-</div>
                 <div class="stat-label">Total Pengguna</div>
+            </div>
         </div>
 
         <!-- Data Kluster -->
@@ -430,6 +457,7 @@
                         <div class="link-desc">Definisi & Formula</div>
                     </a>
                 </div>
+                    </div>
         </div>
 
         <!-- Users List -->
@@ -459,11 +487,13 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
         </div>
 
         <div class="footer-info">
             &copy; 2024 Penilaian Kinerja Puskesmas - Jawa Timur | Sistem Monitoring Provinsi
         </div>
+    </div>
 
     <script>
         // ============================================

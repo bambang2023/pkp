@@ -72,10 +72,13 @@ try {
     $duplicateStmt = $pdo->prepare(
         'SELECT 1
          FROM data_kinerja
-         WHERE bulan = :bulan AND kdindikator = :kdindikator
+         WHERE kdpusk = :kdpusk
+           AND bulan = :bulan
+           AND kdindikator = :kdindikator
          LIMIT 1'
     );
     $duplicateStmt->execute([
+        ':kdpusk' => trim((string) $user['kdpusk']),
         ':bulan' => $bulan,
         ':kdindikator' => $kdIndikator,
     ]);
