@@ -61,7 +61,7 @@
 
         .kinerja-form {
             width: 100%;
-            max-width: 1400px;
+            max-width: 960px;
             margin: auto;
             background: #fff;
             padding: 2rem;
@@ -92,6 +92,7 @@
         .form-field input,
         .form-field select {
             width: 100%;
+            max-width: 520px;
             padding: 10px;
             background: #e7d2b0;
             border: 1px solid #ddd;
@@ -207,7 +208,7 @@
                     </div>
                     <div class="form-field">
                         <label for="target">Target:</label>
-                        <input type="number" id="target" name="target" required>
+                        <input type="number" id="target" name="target" required readonly>
                     </div>
                     <div class="form-field">
                         <label for="satuan">Satuan Sasaran:</label>
@@ -310,6 +311,32 @@
                 indikatorSelect.disabled = disabled;
             }
 
+            function resetTarget() {
+                targetInput.value = '';
+                updateDerivedValues();
+            }
+
+            async function loadTarget(kdIndikator) {
+                resetTarget();
+                if (!kdIndikator) return;
+
+                try {
+                    const response = await fetch(
+                        `API/get_target_by_indikator.php?kd_ind=${encodeURIComponent(kdIndikator)}`
+                    );
+                    const payload = await response.json();
+                    if (!response.ok || payload.ok !== true || payload.target === null) {
+                        throw new Error(payload.error || 'Target indikator tidak ditemukan.');
+                    }
+
+                    targetInput.value = payload.target;
+                    updateDerivedValues();
+                } catch (error) {
+                    errorBox.textContent = error.message || 'Gagal memuat target indikator.';
+                    errorBox.style.display = 'block';
+                }
+            }
+
             async function loadIndikator(kdKluster) {
                 if (!kdKluster) {
                     resetIndikator('Pilih kluster terlebih dahulu');
@@ -353,6 +380,12 @@
             klusterSelect.addEventListener('change', () => {
                 loadIndikator(klusterSelect.value);
                 resetSatuan(klusterSelect.value);
+                resetTarget();
+            });
+
+            indikatorSelect.addEventListener('change', () => {
+                errorBox.style.display = 'none';
+                loadTarget(indikatorSelect.value);
             });
 
             targetInput.addEventListener('input', updateDerivedValues);

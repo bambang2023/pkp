@@ -21,9 +21,9 @@ if (!isset($_SESSION['user_id'], $_SESSION['role'])) {
     exit;
 }
 
-if (!in_array($_SESSION['role'], ['provinsi', 'puskesmas'], true)) {
+if ($_SESSION['role'] !== 'provinsi') {
     http_response_code(403);
-    echo json_encode(['ok' => false, 'error' => 'Akses ditolak. Hanya role provinsi atau puskesmas yang dapat mengubah target.'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['ok' => false, 'error' => 'Akses ditolak. Hanya role provinsi yang dapat mengubah target.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -44,23 +44,47 @@ $updates = [];
 $parameters = [':kd_ind' => $kdInd];
 
 if ($_SESSION['role'] === 'provinsi') {
-    if (!array_key_exists('target', $input)) {
+    $missingMonths = array_filter($monthColumns, static fn (string $month): bool => !array_key_exists($month, $input));
+    if ($missingMonths !== []) {
         http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Nilai target harus dikirim.'], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['ok' => false, 'error' => 'Seluruh nilai Januari sampai Desember harus dikirim.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $target = is_numeric(trim((string) ($input['target'] ?? '')))
+        ? (float) $input['target']
+        : null;
+    if ($target === null) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'target perbulan tidak sesuai'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     $updates[] = '`target` = :target';
-    $target = trim((string) $input['target']);
-    $parameters[':target'] = $target === '' ? null : $target;
-} else {
+    $parameters[':target'] = $target;
+    $total = 0.0;
     foreach ($monthColumns as $month) {
-        if (array_key_exists($month, $input)) {
-            $parameter = ':' . strtolower($month);
-            $updates[] = "`$month` = $parameter";
-            $value = trim((string) $input[$month]);
-            $parameters[$parameter] = $value === '' ? null : $value;
+        $value = trim((string) $input[$month]);
+        if ($value !== '' && !is_numeric($value)) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => "Nilai $month harus berupa angka."], JSON_UNESCAPED_UNICODE);
+            exit;
         }
+
+        $amount = $value === '' ? 0.0 : (float) $value;
+        $total += $amount;
+        $parameter = ':' . strtolower($month);
+        $updates[] = "`$month` = $parameter";
+        $parameters[$parameter] = $value === '' ? null : $value;
+    }
+
+    if (abs($total - $target) > 0.000001) {
+        http_response_code(400);
+        echo json_encode([
+            'ok' => false,
+            'error' => 'target perbulan tidak sesuai',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 }
 

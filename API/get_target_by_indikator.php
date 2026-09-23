@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (!isset($_SESSION['user_id'], $_SESSION['role'])) {
+if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode([
         'ok' => false,
@@ -18,31 +18,43 @@ if (!isset($_SESSION['user_id'], $_SESSION['role'])) {
     exit;
 }
 
-if ($_SESSION['role'] !== 'provinsi') {
-    http_response_code(403);
+$kdInd = trim((string) ($_GET['kd_ind'] ?? ''));
+if ($kdInd === '') {
+    http_response_code(400);
     echo json_encode([
         'ok' => false,
-        'error' => 'Akses ditolak. Halaman ini hanya dapat diakses oleh role provinsi.',
+        'error' => 'Kode indikator wajib diisi.',
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 try {
-    $stmt = $pdo->query(
-        "SELECT kd_ind, ind, target, Januari, Pebruari, Maret, April, Mei, Juni,
-                Juli, Agustus, September, Oktober, Nopember, Desember
+    $stmt = $pdo->prepare(
+        'SELECT target
          FROM target
-         ORDER BY kd_ind"
+         WHERE kd_ind = :kd_ind
+         LIMIT 1'
     );
+    $stmt->execute([':kd_ind' => $kdInd]);
+    $target = $stmt->fetchColumn();
+
+    if ($target === false) {
+        http_response_code(404);
+        echo json_encode([
+            'ok' => false,
+            'error' => 'Target indikator tidak ditemukan.',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     echo json_encode([
         'ok' => true,
-        'data' => $stmt->fetchAll(),
+        'target' => $target,
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
-        'error' => 'Gagal mengambil data target.',
+        'error' => 'Gagal mengambil target indikator.',
     ], JSON_UNESCAPED_UNICODE);
 }

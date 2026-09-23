@@ -211,6 +211,7 @@
             border-radius: 4px;
         }
         .form-field input[readonly] { background: #f5f7f8; }
+        .form-field input[type="number"] { text-align: right; }
         .modal-actions {
             display: flex;
             flex-shrink: 0;
@@ -327,11 +328,7 @@
 
         function renderTargetHeader() {
             const columns = ['KD Indikator', 'Indikator', 'Target'];
-            if (currentRole === 'provinsi') {
-                columns.push('Aksi', ...monthColumns);
-            } else {
-                columns.push(...monthColumns, 'Aksi');
-            }
+            columns.push(...monthColumns, 'Aksi');
             document.getElementById('targetHeader').innerHTML = columns
                 .map(column => `<th>${column}</th>`)
                 .join('');
@@ -341,7 +338,7 @@
             try {
                 const userResponse = await fetch('API/get_current_user.php', { headers: { Accept: 'application/json' } });
                 const userPayload = await userResponse.json();
-                if (!userResponse.ok || userPayload.ok !== true || !['provinsi', 'puskesmas'].includes(userPayload.user.role)) {
+                if (!userResponse.ok || userPayload.ok !== true || userPayload.user.role !== 'provinsi') {
                     window.location.href = 'index.html';
                     return;
                 }
@@ -367,9 +364,8 @@
                         <td>${escapeHtml(row.kd_ind)}</td>
                         <td>${escapeHtml(row.ind)}</td>
                         <td class="month">${escapeHtml(row.target)}</td>
-                        ${currentRole === 'provinsi' ? `<td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>` : ''}
                         ${monthColumns.map(month => `<td class="month">${escapeHtml(row[month])}</td>`).join('')}
-                        ${currentRole === 'puskesmas' ? `<td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>` : ''}
+                        <td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>
                     </tr>
                 `).join('');
 
@@ -385,16 +381,12 @@
                 { key: 'kd_ind', label: 'KD Indikator', readonly: true, full: true },
                 { key: 'ind', label: 'Indikator', readonly: true, full: true },
             ];
-            if (currentRole === 'provinsi') {
-                fields.push({ key: 'target', label: 'Target' });
-            } else {
-                fields.push({ key: 'target', label: 'Target', readonly: true });
-                fields.push(...monthColumns.map(month => ({ key: month, label: month })));
-            }
+            fields.push({ key: 'target', label: 'Target', type: 'number' });
+            fields.push(...monthColumns.map(month => ({ key: month, label: month, type: 'number' })));
             document.getElementById('targetFields').innerHTML = fields.map(field => `
                 <div class="form-field${field.full ? ' full' : ''}">
                     <label for="target-${field.key}">${field.label}</label>
-                    <input id="target-${field.key}" name="${field.key}" type="text" value="${escapeAttribute(row[field.key])}"${field.readonly ? ' readonly' : ''}>
+                    <input id="target-${field.key}" name="${field.key}" type="${field.type || 'text'}" step="any" min="0" value="${escapeAttribute(row[field.key] ?? '')}"${field.readonly ? ' readonly' : ''}>
                 </div>
             `).join('');
         }
@@ -407,7 +399,34 @@
         function openEditModal(row) {
             createTargetFields(row);
             document.getElementById('editModal').hidden = false;
-            document.getElementById(currentRole === 'provinsi' ? 'target-target' : 'target-Januari').focus();
+            document.getElementById('target-Januari').focus();
+        }
+
+        function parseAmount(value) {
+            const normalized = String(value ?? '').trim().replace(',', '.');
+            if (normalized === '') return 0;
+            const amount = Number(normalized);
+            return Number.isFinite(amount) ? amount : null;
+        }
+
+        function validateProvinceTotal(data) {
+            if (currentRole !== 'provinsi') return null;
+
+            const target = parseAmount(data.target);
+            const total = monthColumns.reduce((sum, month) => {
+                const amount = parseAmount(data[month]);
+                return amount === null ? NaN : sum + amount;
+            }, 0);
+
+            if (target === null || !Number.isFinite(total)) {
+                return 'Target dan seluruh nilai bulan harus berupa angka.';
+            }
+
+            if (Math.abs(total - target) > 0.000001) {
+                return 'target perbulan tidak sesuai';
+            }
+
+            return null;
         }
 
         async function updateTarget(event) {
@@ -416,6 +435,12 @@
             const modalError = document.getElementById('modalError');
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData.entries());
+            const validationError = validateProvinceTotal(data);
+            if (validationError) {
+                modalError.textContent = validationError;
+                modalError.hidden = false;
+                return;
+            }
             saveButton.disabled = true;
             saveButton.textContent = 'Menyimpan...';
             modalError.hidden = true;
