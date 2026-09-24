@@ -54,7 +54,7 @@
             <div class="table-wrap">
                 <table id="dataTable" hidden>
                     <thead><tr>
-                        <th>Bulan</th><th>Kode Indikator</th><th>Target</th><th>Satuan</th>
+                        <th>Bulan</th><th>Kode Indikator</th><th>Indikator</th><th>Target</th><th>Satuan</th>
                         <th>Total Sasaran</th><th>Target Sasaran</th><th>Capaian</th>
                         <th>Hasil Riil</th><th>Hasil Kinerja</th>
                     </tr></thead>
@@ -90,11 +90,15 @@
         function render() {
             const filtered = monthFilter.value
                 ? rows.filter(row => String(row.bulan).padStart(2, '0') === monthFilter.value)
-                : rows;
+                : [...rows].sort((first, second) => {
+                    const monthOrder = Number(first.bulan) - Number(second.bulan);
+                    return monthOrder || String(first.kdindikator).localeCompare(String(second.kdindikator));
+                });
             body.innerHTML = filtered.map(row => `
                 <tr>
                     <td>${escapeHtml(monthNames[String(row.bulan).padStart(2, '0')] || row.bulan)}</td>
                     <td>${escapeHtml(row.kdindikator)}</td>
+                    <td>${escapeHtml(row.indikator)}</td>
                     <td class="number">${escapeHtml(row.target)}</td>
                     <td>${escapeHtml(row.sasaran)}</td>
                     <td class="number">${escapeHtml(row.jml_sasaran)}</td>

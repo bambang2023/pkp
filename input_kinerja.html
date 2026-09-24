@@ -257,24 +257,20 @@
             const form = document.getElementById('kinerjaForm');
             const errorBox = document.getElementById('errorBox');
             const submitBtn = document.getElementById('submitBtn');
+            let indikatorData = [];
 
-            const satuanByKluster = {
-                '1': ['Data', 'Dokumen', 'Laporan', 'Laporan data', 'Notulen', 'Sertifikat'],
-                '2': [
-                    'baduta', 'balita', 'balita gizi kurang', 'balita usia 0-59 bulan',
-                    'balita usia 6-59 bulan', 'bayi', 'bayi, baduta', 'bufas', 'bulin',
-                    'bumil', 'bumil, bulin', 'neonatus', 'persen', 'remaja putri', 'sekolah'
-                ],
-                '3': ['persen', 'Lansia'],
-                '4': ['dokumen', 'kasus', 'orang', 'pasien', 'persen', 'sekolah'],
-                '5': ['desa', 'dokumen', 'fungsi', 'jenis pemeriksaan', 'menit', 'pasien', 'pelayanan', 'peta', 'resep', 'sertifikat']
-            };
+            function resetSatuan(message = 'Pilih kode indikator terlebih dahulu') {
+                satuanSelect.innerHTML = `<option value="">${message}</option>`;
+                satuanSelect.disabled = true;
+            }
 
-            function resetSatuan(kdKluster) {
-                const satuan = satuanByKluster[kdKluster] || [];
+            function setSatuan(indikator) {
+                const satuan = String(indikator?.satuan ?? '').trim();
                 satuanSelect.innerHTML = '<option value="">Pilih satuan sasaran</option>';
-                satuan.forEach(item => satuanSelect.add(new Option(item, item)));
-                satuanSelect.disabled = satuan.length === 0;
+                if (satuan !== '') {
+                    satuanSelect.add(new Option(satuan, satuan, true, true));
+                }
+                satuanSelect.disabled = satuan === '';
             }
 
             function formatDecimal(value) {
@@ -363,8 +359,9 @@
                         return;
                     }
 
+                    indikatorData = payload.data;
                     indikatorSelect.innerHTML = '<option value="">Pilih indikator</option>';
-                    payload.data.forEach(indikator => {
+                    indikatorData.forEach(indikator => {
                         indikatorSelect.add(new Option(
                             `${indikator.kd_ind} - ${indikator.indikator}`,
                             indikator.kd_ind
@@ -379,12 +376,14 @@
 
             klusterSelect.addEventListener('change', () => {
                 loadIndikator(klusterSelect.value);
-                resetSatuan(klusterSelect.value);
+                resetSatuan();
                 resetTarget();
             });
 
             indikatorSelect.addEventListener('change', () => {
                 errorBox.style.display = 'none';
+                const indikator = indikatorData.find(item => String(item.kd_ind) === indikatorSelect.value);
+                setSatuan(indikator);
                 loadTarget(indikatorSelect.value);
             });
 
@@ -418,7 +417,8 @@
                     alert(payload.message);
                     form.reset();
                     resetIndikator('Pilih kluster terlebih dahulu');
-                    resetSatuan('');
+                    indikatorData = [];
+                    resetSatuan();
                     updateDerivedValues();
                 } catch (error) {
                     errorBox.textContent = error.message || 'Gagal menyimpan data kinerja.';

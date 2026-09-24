@@ -28,11 +28,14 @@ try {
     }
 
     $stmt = $pdo->prepare(
-        'SELECT nip, kdpusk, bulan, kdindikator, target, sasaran, jml_sasaran,
-                target_sasaran, capaian, hasil_riil, hasil_kinerja
-         FROM data_kinerja
-         WHERE kdpusk = :kdpusk
-         ORDER BY bulan DESC, kdindikator ASC'
+        'SELECT dk.nip, dk.kdpusk, dk.bulan, dk.kdindikator,
+            i.indikator AS indikator, dk.target, dk.sasaran, dk.jml_sasaran,
+            dk.target_sasaran, dk.capaian, dk.hasil_riil, dk.hasil_kinerja
+         FROM data_kinerja AS dk
+          LEFT JOIN indikator AS i
+              ON i.kd_ind COLLATE utf8mb4_general_ci = dk.kdindikator COLLATE utf8mb4_general_ci
+         WHERE dk.kdpusk = :kdpusk
+         ORDER BY CAST(dk.bulan AS UNSIGNED) ASC, dk.kdindikator ASC'
     );
     $stmt->execute([':kdpusk' => $kdpusk]);
 

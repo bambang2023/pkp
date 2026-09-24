@@ -11,7 +11,12 @@ try {
 
     if ($kd_ind_filter !== null) {
         // Mode 1: Ambil satu indikator berdasarkan kd_ind
-        $stmt = $pdo->prepare("SELECT kd_3, kd_ind, indikator, kegiatan, DO, formula, sumber_data FROM indikator WHERE kd_ind = :kd_ind");
+        $stmt = $pdo->prepare(
+            "SELECT i.kd_3, i.kd_ind, i.indikator, i.kegiatan, i.DO, i.formula, i.sumber_data,
+                (SELECT s.satuan FROM satuan AS s WHERE s.kd_ind = i.kd_ind LIMIT 1) AS satuan
+             FROM indikator AS i
+             WHERE i.kd_ind = :kd_ind"
+        );
         $stmt->execute([':kd_ind' => $kd_ind_filter]);
         $row = $stmt->fetch();
 
@@ -24,6 +29,7 @@ try {
                 'DO' => $row['DO'] ?? null,
                 'formula' => $row['formula'] ?? null,
                 'sumber_data' => $row['sumber_data'] ?? null,
+                'satuan' => $row['satuan'] ?? null,
             ];
             echo json_encode(['ok' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
         } else {
@@ -32,10 +38,11 @@ try {
         }
     } elseif ($kd_kluster_filter !== null && $kd_kluster_filter !== '') {
         $stmt = $pdo->prepare(
-            "SELECT kd_3, kd_ind, indikator, kegiatan, DO, formula, sumber_data
-             FROM indikator
-             WHERE kd_ind LIKE :kd_prefix
-             ORDER BY kd_ind"
+                "SELECT i.kd_3, i.kd_ind, i.indikator, i.kegiatan, i.DO, i.formula, i.sumber_data,
+                    (SELECT s.satuan FROM satuan AS s WHERE s.kd_ind = i.kd_ind LIMIT 1) AS satuan
+                 FROM indikator AS i
+                 WHERE i.kd_ind LIKE :kd_prefix
+                 ORDER BY i.kd_ind"
         );
         $stmt->execute([':kd_prefix' => $kd_kluster_filter . '.%']);
         $rows = $stmt->fetchAll();
@@ -46,7 +53,12 @@ try {
         ], JSON_UNESCAPED_UNICODE);
     } else {
         // Mode 2: Ambil semua indikator (perilaku default)
-        $stmt = $pdo->query("SELECT kd_3, kd_ind, indikator, kegiatan, DO, formula, sumber_data FROM indikator ORDER BY kd_ind");
+        $stmt = $pdo->query(
+            "SELECT i.kd_3, i.kd_ind, i.indikator, i.kegiatan, i.DO, i.formula, i.sumber_data,
+                (SELECT s.satuan FROM satuan AS s WHERE s.kd_ind = i.kd_ind LIMIT 1) AS satuan
+             FROM indikator AS i
+             ORDER BY i.kd_ind"
+        );
         $rows = $stmt->fetchAll();
 
         echo json_encode([
