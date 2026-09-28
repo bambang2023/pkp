@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Kabupaten - PKP Jawa Timur</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #26352f;
+            background: #f3f5f2;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; }
+        .navbar { min-height: 66px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #173f3a; color: #fff; }
+        .brand { color: inherit; text-decoration: none; font-weight: 700; }
+        .nav-tools { display: flex; align-items: center; gap: 18px; }
+        .nav-tools a { color: #e0eee8; text-decoration: none; }
+        .nav-tools a:hover { text-decoration: underline; }
+        .nav-user { display: flex; align-items: center; gap: 12px; }
+        .user-copy { text-align: right; }
+        .user-name { font-size: .9rem; font-weight: 650; }
+        .user-role { margin-top: 2px; color: #b8d3c9; font-size: .75rem; }
+        .avatar { display: grid; width: 36px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #e9a35b; color: #26352f; font-weight: 700; }
+        .logout { padding: 8px 12px; border: 1px solid #719088; border-radius: 4px; background: transparent; color: white; cursor: pointer; font: inherit; }
+        .logout:hover { background: #28564f; }
+        main { max-width: 1320px; margin: 0 auto; padding: 30px 24px 54px; }
+        .page-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
+        .eyebrow { margin: 0 0 7px; color: #9b5f2c; font-size: .76rem; font-weight: 700; text-transform: uppercase; }
+        h1 { margin: 0; color: #183d37; font-size: 2rem; }
+        .subhead { margin: 8px 0 0; color: #65736d; }
+        .filter { display: flex; align-items: end; gap: 10px; }
+        .filter label { display: grid; gap: 6px; color: #5d6c66; font-size: .8rem; font-weight: 600; }
+        select, .refresh { min-height: 40px; padding: 0 12px; border: 1px solid #c8d2cc; border-radius: 4px; background: #fff; color: #26352f; font: inherit; }
+        .refresh { border-color: #1e6656; background: #1e6656; color: #fff; cursor: pointer; font-weight: 600; }
+        .refresh:hover { background: #285448; }
+        .refresh:disabled { opacity: .6; cursor: wait; }
+        .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat { min-height: 132px; padding: 17px 18px; border: 1px solid #dce3de; border-top: 3px solid #1e6656; border-radius: 4px; background: white; }
+        .stat:nth-child(2) { border-top-color: #d48a45; }
+        .stat:nth-child(3) { border-top-color: #3b7880; }
+        .stat:nth-child(4) { border-top-color: #738954; }
+        .stat-label { color: #63716b; font-size: .82rem; }
+        .stat-value { display: block; margin-top: 8px; color: #1b4039; font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .stat-note { margin-top: 5px; color: #78847f; font-size: .74rem; }
+        .progress-track { height: 6px; margin-top: 12px; overflow: hidden; border-radius: 6px; background: #e7ece8; }
+        .progress-fill { width: 0; height: 100%; background: #1e6656; transition: width .25s ease; }
+        .panel { overflow: hidden; border: 1px solid #dce3de; border-radius: 4px; background: white; }
+        .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 16px 18px; border-bottom: 1px solid #e6ebe7; }
+        .panel-head h2 { margin: 0; color: #263b34; font-size: 1rem; }
+        .period-label { color: #6d7974; font-size: .8rem; }
+        .table-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 790px; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid #edf0ed; text-align: left; }
+        th { background: #f7f9f7; color: #64716b; font-size: .72rem; text-transform: uppercase; }
+        tbody tr:hover { background: #f8fbf9; }
+        .rank { width: 42px; color: #89948e; font-variant-numeric: tabular-nums; }
+        .facility { font-weight: 600; }
+        .code { display: block; margin-top: 3px; color: #7b8982; font-size: .75rem; font-weight: 400; }
+        .numeric { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .completion { min-width: 154px; }
+        .completion-value { display: flex; justify-content: space-between; gap: 12px; font-size: .82rem; font-variant-numeric: tabular-nums; }
+        .mini-track { height: 5px; margin-top: 7px; overflow: hidden; border-radius: 5px; background: #e7ece8; }
+        .mini-track span { display: block; height: 100%; background: #31806b; }
+        .message { margin: 18px; padding: 12px 14px; border-radius: 4px; color: #495b53; background: #edf4ef; }
+        .message.error { color: #842029; background: #f8d7da; }
+        .message[hidden], .table-scroll[hidden] { display: none; }
+        .footer { padding-top: 20px; color: #87928c; font-size: .78rem; text-align: right; }
+        @media (max-width: 850px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 650px) {
+            .navbar { padding: 12px 15px; flex-wrap: wrap; }
+            .nav-tools { width: 100%; justify-content: space-between; order: 3; }
+            .nav-user { margin-left: auto; }
+            .user-copy { display: none; }
+            main { padding: 24px 14px 40px; }
+            .page-head { align-items: stretch; flex-direction: column; gap: 16px; }
+            .filter label { flex: 1; }
+            select { width: 100%; }
+            .stats { gap: 8px; }
+            .stat { min-height: 118px; padding: 13px; }
+            .stat-value { font-size: 1.55rem; }
+            .panel-head { align-items: start; flex-direction: column; }
+        }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a class="brand" href="kabupaten.html">PKP Jawa Timur</a>
+        <div class="nav-tools"><a href="kabupaten.html">Dashboard</a><a href="#monitorTitle">Monitoring Puskesmas</a></div>
+        <div class="nav-user">
+            <div class="user-copy"><div class="user-name" id="userName">-</div><div class="user-role" id="userRole">Kabupaten</div></div>
+            <span class="avatar" id="userAvatar">K</span>
+            <button class="logout" id="logoutButton" type="button">Keluar</button>
+        </div>
+    </nav>
+    <main>
+        <header class="page-head">
+            <div>
+                <p class="eyebrow">Nama kabupaten</p>
+                <h1 id="districtTitle">Memuat nama kabupaten...</h1>
+                <p class="subhead" id="districtSubtitle">Dashboard capaian kinerja Puskesmas</p>
+            </div>
+            <div class="filter">
+                <label for="monthFilter">Bulan pelaporan
+                    <select id="monthFilter">
+                        <option value="">Semua bulan</option>
+                        <option value="01">Januari</option><option value="02">Februari</option>
+                        <option value="03">Maret</option><option value="04">April</option>
+                        <option value="05">Mei</option><option value="06">Juni</option>
+                        <option value="07">Juli</option><option value="08">Agustus</option>
+                        <option value="09">September</option><option value="10">Oktober</option>
+                        <option value="11">November</option><option value="12">Desember</option>
+                    </select>
+                </label>
+                <button class="refresh" id="refreshButton" type="button">Perbarui</button>
+            </div>
+        </header>
+
+        <section class="stats" aria-label="Infografis capaian kabupaten">
+            <article class="stat"><span class="stat-label">Puskesmas di wilayah</span><strong class="stat-value" id="totalFacilities">-</strong><div class="stat-note">Fasilitas terdaftar</div></article>
+            <article class="stat"><span class="stat-label">Sudah mengisi</span><strong class="stat-value" id="submittingFacilities">-</strong><div class="stat-note" id="submittingNote">Puskesmas dengan data periode ini</div></article>
+            <article class="stat"><span class="stat-label">Pengisian indikator</span><strong class="stat-value" id="completionRate">-</strong><div class="progress-track"><div class="progress-fill" id="completionProgress"></div></div></article>
+            <article class="stat"><span class="stat-label">Rata-rata hasil kinerja</span><strong class="stat-value" id="averagePerformance">-</strong><div class="stat-note">Rata-rata nilai hasil kinerja</div></article>
+        </section>
+
+        <section class="panel" aria-labelledby="monitorTitle">
+            <div class="panel-head">
+                <h2 id="monitorTitle">Capaian kinerja per Puskesmas</h2>
+                <span class="period-label" id="periodLabel">Semua bulan</span>
+            </div>
+            <div class="message" id="message">Memuat capaian kinerja...</div>
+            <div class="table-scroll" id="tableWrap" hidden>
+                <table>
+                    <thead><tr><th>#</th><th>Nama Puskesmas</th><th class="numeric">Indikator terisi</th><th>Persentase pengisian</th><th class="numeric">Rata-rata hasil kinerja</th></tr></thead>
+                    <tbody id="facilityRows"></tbody>
+                </table>
+            </div>
+        </section>
+        <footer class="footer">PKP Jawa Timur · Monitoring tingkat kabupaten</footer>
+    </main>
+    <script>
+        const monthFilter = document.getElementById('monthFilter');
+        const refreshButton = document.getElementById('refreshButton');
+        const message = document.getElementById('message');
+        const tableWrap = document.getElementById('tableWrap');
+        const facilityRows = document.getElementById('facilityRows');
+        const numberFormat = new Intl.NumberFormat('id-ID');
+        const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        function escapeHtml(value) {
+            const element = document.createElement('span');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
+        function render(payload) {
+            const summary = payload.ringkasan;
+            const facilities = Array.isArray(payload.data) ? payload.data : [];
+            document.getElementById('districtTitle').textContent = payload.kabupaten.nama || 'Nama kabupaten tidak tersedia';
+            document.getElementById('districtSubtitle').textContent = `Kode wilayah ${payload.kabupaten.kode} · dashboard capaian kinerja Puskesmas`;
+            document.getElementById('totalFacilities').textContent = numberFormat.format(summary.total_puskesmas);
+            document.getElementById('submittingFacilities').textContent = `${numberFormat.format(summary.puskesmas_mengisi)} / ${numberFormat.format(summary.total_puskesmas)}`;
+            document.getElementById('completionRate').textContent = `${Number(summary.persentase_pengisian).toFixed(1)}%`;
+            document.getElementById('completionProgress').style.width = `${Math.min(Number(summary.persentase_pengisian), 100)}%`;
+            document.getElementById('averagePerformance').textContent = summary.rata_hasil_kinerja == null
+                ? '-'
+                : numberFormat.format(Number(summary.rata_hasil_kinerja));
+            document.getElementById('submittingNote').textContent = `${numberFormat.format(summary.jumlah_terisi)} dari ${numberFormat.format(summary.total_kemungkinan)} pengisian indikator`;
+            document.getElementById('periodLabel').textContent = monthFilter.value
+                ? `Periode ${monthNames[Number(monthFilter.value)]}`
+                : 'Akumulasi semua bulan';
+
+            facilityRows.innerHTML = facilities.map((facility, index) => {
+                const rate = Number(facility.persentase_pengisian || 0);
+                const performance = facility.rata_hasil_kinerja == null
+                    ? '-'
+                    : numberFormat.format(Number(facility.rata_hasil_kinerja));
+                return `<tr>
+                    <td class="rank">${index + 1}</td>
+                    <td class="facility">${escapeHtml(facility.nama)}<span class="code">${escapeHtml(facility.kode)}</span></td>
+                    <td class="numeric">${numberFormat.format(facility.jumlah_terisi)} / ${numberFormat.format(facility.total_indikator)}</td>
+                    <td class="completion"><div class="completion-value"><span>${rate.toFixed(1)}%</span><span>${numberFormat.format(facility.jumlah_terisi)} terisi</span></div><div class="mini-track"><span style="width:${Math.min(rate, 100)}%"></span></div></td>
+                    <td class="numeric">${performance}</td>
+                </tr>`;
+            }).join('');
+            tableWrap.hidden = facilities.length === 0;
+            message.hidden = facilities.length > 0;
+            if (facilities.length === 0) message.textContent = 'Belum ada Puskesmas terdaftar di kabupaten ini.';
+        }
+
+        async function loadDashboard() {
+            refreshButton.disabled = true;
+            message.hidden = false;
+            message.className = 'message';
+            message.textContent = 'Memuat capaian kinerja...';
+            tableWrap.hidden = true;
+            try {
+                const userResponse = await fetch('API/get_current_user.php', { headers: { Accept: 'application/json' } });
+                const userPayload = await userResponse.json();
+                if (!userResponse.ok || !userPayload.ok || userPayload.user?.role !== 'kabupaten') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                document.getElementById('districtTitle').textContent = userPayload.user.kabupaten_nama || 'Nama kabupaten tidak tersedia';
+                document.getElementById('userName').textContent = userPayload.user.nama || '-';
+                document.getElementById('userAvatar').textContent = (userPayload.user.nama || 'K').charAt(0).toUpperCase();
+                const params = new URLSearchParams();
+                if (monthFilter.value) params.set('bulan', monthFilter.value);
+                const response = await fetch(`API/get_monitoring_kabupaten.php?${params}`, { headers: { Accept: 'application/json' } });
+                const payload = await response.json();
+                if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'Gagal memuat capaian kabupaten.');
+                render(payload);
+            } catch (error) {
+                const title = document.getElementById('districtTitle');
+                if (title.textContent === 'Memuat nama kabupaten...') {
+                    title.textContent = 'Nama kabupaten tidak tersedia';
+                }
+                message.className = 'message error';
+                message.textContent = error.message || 'Terjadi kesalahan saat memuat dashboard.';
+                message.hidden = false;
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            await fetch('API/logout.php', { method: 'POST' }).catch(() => {});
+            window.location.href = 'index.html';
+        });
+        monthFilter.addEventListener('change', loadDashboard);
+        refreshButton.addEventListener('click', loadDashboard);
+        loadDashboard();
+    </script>
+</body>
+</html>

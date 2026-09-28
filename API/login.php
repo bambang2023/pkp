@@ -57,7 +57,7 @@ try {
     // Redirect ke dashboard berdasarkan role
     $redirectMap = [
         'provinsi'  => '../provinsi.html',
-        'kabupaten' => '../index.html',
+        'kabupaten' => '../kabupaten.html',
         'puskesmas' => '../puskesmas.html',
     ];
     $redirect = $redirectMap[$role] ?? '../index.html';
