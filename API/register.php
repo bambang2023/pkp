@@ -1,68 +1,146 @@
 <?php
 declare(strict_types=1);
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
+
 require_once __DIR__ . '/db.php';
+
+function showResult(string $title, string $message, bool $success = false): never
+{
+    $safeTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+    $safeMessage = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+    $action = $success
+        ? '<a href="../index.html" class="login-btn" style="display:inline-block;text-decoration:none;color:white;padding:0.75rem 2rem;">Ke halaman login</a>'
+        : '<a href="../register.html">Kembali ke formulir registrasi</a>';
+
+    echo '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' . $safeTitle . '</title><link rel="stylesheet" href="../styles.css"></head><body><main class="container"><section class="login-box"><h1>' . $safeTitle . '</h1><p>' . $safeMessage . '</p><p>' . $action . '</p></section></main></body></html>';
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    header('Content-Type: text/html; charset=utf-8');
-    echo '<p>Metode tidak diizinkan. <a href="../register.html">Kembali</a></p>';
-    exit;
+    header('Allow: POST');
+    showResult('Metode tidak diizinkan', 'Gunakan formulir registrasi untuk membuat akun.');
 }
 
-$nama      = trim($_POST['nama'] ?? '');
-$nip       = trim($_POST['nip'] ?? '');
-$password  = $_POST['password'] ?? '';
-$role      = $_POST['role'] ?? '';
-$provinsi  = $_POST['provinsi'] ?? '';
-$kabupaten = $_POST['kabupaten'] ?? '';
-$puskesmas = $_POST['puskesmas'] ?? '';
+$nama = trim((string)($_POST['nama'] ?? ''));
+$nip = trim((string)($_POST['nip'] ?? ''));
+$email = trim((string)($_POST['email'] ?? ''));
+$password = (string)($_POST['password'] ?? '');
+$role = (string)($_POST['role'] ?? '');
+$provinsi = trim((string)($_POST['provinsi'] ?? ''));
+$kabupaten = trim((string)($_POST['kabupaten'] ?? ''));
+$puskesmas = trim((string)($_POST['puskesmas'] ?? ''));
 
-// Validasi sederhana
-$errors = [];
-if ($nama === '') $errors[] = 'Nama harus diisi';
-if ($nip === '') $errors[] = 'NIP harus diisi';
-if ($password === '') $errors[] = 'Password harus diisi';
-if (!in_array($role, ['puskesmas', 'kabupaten', 'provinsi'], true)) $errors[] = 'Role tidak valid';
+if ($nama === '' || $nip === '' || $email === '' || $password === '') {
+    showResult('Registrasi belum lengkap', 'Nama, NIP, email, dan password wajib diisi.');
+}
 
-if (count($errors) > 0) {
-    echo '<div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:2rem auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">';
-    echo '<h2>Registrasi Gagal</h2><ul>';
-    foreach ($errors as $e) {
-        echo '<li>' . htmlspecialchars($e) . '</li>';
-    }
-    echo '</ul><a href="../register.html">Kembali ke form registrasi</a></div>';
-    exit;
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    showResult('Email tidak valid', 'Masukkan alamat email yang benar agar tautan aktivasi dapat diterima.');
+}
+
+if (strlen($password) < 8) {
+    showResult('Password terlalu pendek', 'Password harus memiliki minimal 8 karakter.');
+}
+
+if (!in_array($role, ['puskesmas', 'kabupaten', 'provinsi'], true)) {
+    showResult('Role tidak valid', 'Pilih role yang tersedia pada formulir.');
+}
+
+if ($provinsi === '' || ($role !== 'provinsi' && $kabupaten === '') || ($role === 'puskesmas' && $puskesmas === '')) {
+    showResult('Wilayah belum lengkap', 'Pilih wilayah sesuai dengan role akun.');
+}
+
+$baseUrl = rtrim((string) ($_ENV['PKP_BASE_URL'] ?? ''), '/');
+$fromEmail = (string) ($_ENV['PKP_MAIL_FROM'] ?? '');
+$smtpHost = (string) ($_ENV['SMTP_HOST'] ?? '');
+$smtpPort = filter_var($_ENV['SMTP_PORT'] ?? null, FILTER_VALIDATE_INT);
+$smtpUsername = (string) ($_ENV['SMTP_USERNAME'] ?? '');
+$smtpPassword = (string) ($_ENV['SMTP_PASSWORD'] ?? '');
+$smtpEncryption = strtolower((string) ($_ENV['SMTP_ENCRYPTION'] ?? 'tls'));
+$smtpSecure = match ($smtpEncryption) {
+    'ssl' => PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS,
+    'tls' => PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS,
+    default => null,
+};
+
+if (
+    filter_var($baseUrl, FILTER_VALIDATE_URL) === false
+    || filter_var($fromEmail, FILTER_VALIDATE_EMAIL) === false
+    || $smtpHost === ''
+    || $smtpPort === false
+    || $smtpPort < 1
+    || $smtpUsername === ''
+    || $smtpPassword === ''
+    || $smtpSecure === null
+) {
+    showResult('Konfigurasi email belum lengkap', 'Administrator perlu memeriksa PKP_BASE_URL dan pengaturan SMTP di file .env.');
 }
 
 try {
-    // Cek apakah NIP sudah terdaftar
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE nip = ?");
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE nip = ? LIMIT 1');
     $stmt->execute([$nip]);
     if ($stmt->fetch()) {
-        echo '<div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:2rem auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">';
-        echo '<h2>Registrasi Gagal</h2><p>NIP ' . htmlspecialchars($nip) . ' sudah terdaftar.</p>';
-        echo '<a href="../register.html">Kembali ke form registrasi</a></div>';
-        exit;
+        showResult('NIP sudah terdaftar', 'Gunakan NIP yang belum terdaftar atau hubungi administrator.');
     }
 
-    // Hash password
+    $stmt = $pdo->prepare('DELETE FROM pending_users WHERE nip = ? AND expires_at <= NOW()');
+    $stmt->execute([$nip]);
+
+    $stmt = $pdo->prepare('SELECT id FROM pending_users WHERE nip = ? LIMIT 1');
+    $stmt->execute([$nip]);
+    if ($stmt->fetch()) {
+        showResult('Registrasi sedang menunggu aktivasi', 'Periksa email yang digunakan saat registrasi untuk membuka tautan aktivasi.');
+    }
+
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Insert user
-    $stmt = $pdo->prepare("INSERT INTO users (nama, nip, password, role, provinsi, kabupaten, puskesmas) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$nama, $nip, $hashedPassword, $role, $provinsi, $kabupaten, $puskesmas]);
+    $stmt = $pdo->prepare('INSERT INTO pending_users (nama, nip, email, password, role, provinsi, kabupaten, puskesmas, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))');
+    $stmt->execute([
+        $nama,
+        $nip,
+        $email,
+        $hashedPassword,
+        $role,
+        $provinsi,
+        $kabupaten !== '' ? $kabupaten : null,
+        $puskesmas !== '' ? $puskesmas : null,
+        $tokenHash,
+    ]);
 
-    echo '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Registrasi Berhasil</title>';
-    echo '<link rel="stylesheet" href="../styles.css">';
-    echo '</head><body><div class="container"><div class="login-box">';
-    echo '<h1>Registrasi Berhasil</h1>';
-    echo '<p>Akun dengan NIP <strong>' . htmlspecialchars($nip) . '</strong> berhasil dibuat.</p>';
-    echo '<p><a href="../index.html" class="login-btn" style="display:inline-block;text-decoration:none;color:white;padding:0.75rem 2rem;">Login Sekarang</a></p>';
-    echo '</div></div></body></html>';
+    $activationUrl = $baseUrl . '/API/activate_account.php?token=' . rawurlencode($token);
+    try {
+        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = $smtpHost;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = $smtpUsername;
+        $mailer->Password = $smtpPassword;
+        $mailer->SMTPSecure = $smtpSecure;
+        $mailer->Port = $smtpPort;
+        $mailer->CharSet = 'UTF-8';
+        $mailer->setFrom($fromEmail, 'PKP Jawa Timur');
+        $mailer->addAddress($email, $nama);
+        $mailer->Subject = 'Aktivasi akun PKP Jawa Timur';
+        $mailer->Body = "Halo {$nama},\n\n"
+            . "Untuk mengaktifkan akun PKP Anda, buka tautan berikut dalam 24 jam:\n"
+            . $activationUrl . "\n\n"
+            . "Jika Anda tidak membuat akun ini, abaikan email ini.\n";
+        $mailer->send();
+    } catch (Throwable $e) {
+        $stmt = $pdo->prepare('DELETE FROM pending_users WHERE token_hash = ?');
+        $stmt->execute([$tokenHash]);
+        error_log('Email aktivasi gagal: ' . $e->getMessage());
+        showResult('Email aktivasi gagal dikirim', 'Akun belum dibuat. Administrator perlu memeriksa konfigurasi SMTP.');
+    }
+
+    showResult('Periksa email Anda', 'Tautan aktivasi telah dikirim ke ' . $email . '. Tautan berlaku selama 24 jam.', true);
 } catch (Throwable $e) {
     http_response_code(500);
-    echo '<div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:2rem auto;background:#fff;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);">';
-    echo '<h2>Error</h2><p>' . htmlspecialchars($e->getMessage()) . '</p>';
-    echo '<a href="../register.html">Kembali</a></div>';
+    showResult('Registrasi gagal', 'Terjadi kendala saat memproses registrasi. Pastikan skema aktivasi sudah dipasang dan coba kembali.');
 }
-

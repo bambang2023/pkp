@@ -35,7 +35,7 @@ try {
         echo '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Login Gagal</title>';
         echo '<link rel="stylesheet" href="../styles.css">';
         echo '</head><body><div class="container"><div class="login-box">';
-        echo '<h1>Login Gagal</h1><p>NIP atau password salah.</p>';
+        echo '<h1>Login Gagal</h1><p>NIP atau password salah.</p><p>Jika baru mendaftar, aktifkan akun melalui tautan yang dikirim ke email Anda.</p>';
         echo '<p><a href="../index.html" class="login-btn" style="display:inline-block;text-decoration:none;color:white;padding:0.75rem 2rem;">Kembali</a></p>';
         echo '</div></body></html>';
         exit;

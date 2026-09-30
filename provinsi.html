@@ -473,13 +473,14 @@
                             <tr>
                                 <th>Nama</th>
                                 <th>NIP</th>
+                                <th>Email</th>
                                 <th>Role</th>
                                 <th>Wilayah</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
                             <tr>
-                                <td colspan="4" class="empty-state">
+                                <td colspan="5" class="empty-state">
                                     <div class="empty-icon">&#128466;</div>
                                     <p>Belum ada data pengguna.</p>
                                 </td>
@@ -572,6 +573,7 @@
                             <tr>
                                 <td><strong>${escapeHtml(u.nama)}</strong></td>
                                 <td>${escapeHtml(u.nip)}</td>
+                                <td>${escapeHtml(u.email)}</td>
                                 <td><span class="role-badge ${roleClass}">${escapeHtml(u.role)}</span></td>
                                 <td>${escapeHtml(wilayah)}</td>
                             </tr>

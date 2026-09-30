@@ -19,8 +19,17 @@ if (!isset($_SESSION['user_id'], $_SESSION['role'], $_SESSION['nama'])) {
     exit;
 }
 
+if ($_SESSION['role'] !== 'provinsi') {
+    http_response_code(403);
+    echo json_encode([
+        'ok'    => false,
+        'error' => 'Forbidden.',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 try {
-    $stmt = $pdo->query("SELECT u.id, u.nama, u.nip, u.role, u.provinsi, u.kabupaten,
+    $stmt = $pdo->query("SELECT u.id, u.nama, u.nip, u.email, u.role, u.provinsi, u.kabupaten,
                                 u.puskesmas AS puskesmas_kode,
                                 COALESCE(p.nama, u.puskesmas) AS puskesmas
                          FROM users u
