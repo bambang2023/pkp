@@ -1,9 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
-Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
+use PHPMailer\PHPMailer\PHPMailer;
 
 require_once __DIR__ . '/db.php';
 
@@ -54,18 +52,13 @@ if ($provinsi === '' || ($role !== 'provinsi' && $kabupaten === '') || ($role ==
     showResult('Wilayah belum lengkap', 'Pilih wilayah sesuai dengan role akun.');
 }
 
-$baseUrl = rtrim((string) ($_ENV['PKP_BASE_URL'] ?? ''), '/');
-$fromEmail = (string) ($_ENV['PKP_MAIL_FROM'] ?? '');
-$smtpHost = (string) ($_ENV['SMTP_HOST'] ?? '');
-$smtpPort = filter_var($_ENV['SMTP_PORT'] ?? null, FILTER_VALIDATE_INT);
-$smtpUsername = (string) ($_ENV['SMTP_USERNAME'] ?? '');
-$smtpPassword = (string) ($_ENV['SMTP_PASSWORD'] ?? '');
-$smtpEncryption = strtolower((string) ($_ENV['SMTP_ENCRYPTION'] ?? 'tls'));
-$smtpSecure = match ($smtpEncryption) {
-    'ssl' => PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS,
-    'tls' => PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS,
-    default => null,
-};
+$baseUrl = rtrim((string)(getenv('PKP_BASE_URL') ?: ''), '/');
+$fromEmail = (string)(getenv('PKP_MAIL_FROM') ?: '');
+$smtpHost = trim((string)(getenv('SMTP_HOST') ?: ''));
+$smtpPort = filter_var(getenv('SMTP_PORT'), FILTER_VALIDATE_INT);
+$smtpUsername = (string)(getenv('SMTP_USERNAME') ?: '');
+$smtpPassword = (string)(getenv('SMTP_PASSWORD') ?: '');
+$smtpEncryption = strtolower((string)(getenv('SMTP_ENCRYPTION') ?: 'tls'));
 
 if (
     filter_var($baseUrl, FILTER_VALIDATE_URL) === false
@@ -73,12 +66,22 @@ if (
     || $smtpHost === ''
     || $smtpPort === false
     || $smtpPort < 1
+    || $smtpPort > 65535
     || $smtpUsername === ''
     || $smtpPassword === ''
-    || $smtpSecure === null
+    || !in_array($smtpEncryption, ['tls', 'ssl'], true)
 ) {
-    showResult('Konfigurasi email belum lengkap', 'Administrator perlu memeriksa PKP_BASE_URL dan pengaturan SMTP di file .env.');
+    showResult('Konfigurasi email belum lengkap', 'Periksa PKP_BASE_URL, PKP_MAIL_FROM, dan konfigurasi SMTP di file .env.');
 }
+
+$autoloadPath = dirname(__DIR__) . '/vendor/autoload.php';
+if (!is_file($autoloadPath)) {
+    showResult('Dependensi email belum tersedia', 'Jalankan composer install pada folder aplikasi, lalu coba kembali.');
+}
+require_once $autoloadPath;
+$smtpSecure = $smtpEncryption === 'ssl'
+    ? PHPMailer::ENCRYPTION_SMTPS
+    : PHPMailer::ENCRYPTION_STARTTLS;
 
 try {
     $stmt = $pdo->prepare('SELECT id FROM users WHERE nip = ? LIMIT 1');
@@ -115,7 +118,7 @@ try {
 
     $activationUrl = $baseUrl . '/API/activate_account.php?token=' . rawurlencode($token);
     try {
-        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mailer = new PHPMailer(true);
         $mailer->isSMTP();
         $mailer->Host = $smtpHost;
         $mailer->SMTPAuth = true;
@@ -135,8 +138,8 @@ try {
     } catch (Throwable $e) {
         $stmt = $pdo->prepare('DELETE FROM pending_users WHERE token_hash = ?');
         $stmt->execute([$tokenHash]);
-        error_log('Email aktivasi gagal: ' . $e->getMessage());
-        showResult('Email aktivasi gagal dikirim', 'Akun belum dibuat. Administrator perlu memeriksa konfigurasi SMTP.');
+        error_log('Email aktivasi gagal dikirim melalui SMTP.');
+        showResult('Email aktivasi gagal dikirim', 'Akun belum dibuat. Periksa konfigurasi SMTP di file .env.');
     }
 
     showResult('Periksa email Anda', 'Tautan aktivasi telah dikirim ke ' . $email . '. Tautan berlaku selama 24 jam.', true);

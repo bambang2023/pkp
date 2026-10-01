@@ -22,7 +22,7 @@ Options -Indexes
 # ===================================
 # Protect Sensitive Files
 # ===================================
-<FilesMatch "\.(env|log|sql|md)$">
+<FilesMatch "^(\.env(\..*)?|.*\.(log|sql|md))$">
     Require all denied
 </FilesMatch>
 
