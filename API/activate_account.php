@@ -22,8 +22,8 @@ if (!preg_match('/\A[a-f0-9]{64}\z/', $token)) {
 
 try {
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare('SELECT id, nama, nip, email, password, role, provinsi, kabupaten, puskesmas FROM pending_users WHERE token_hash = ? AND expires_at > NOW() LIMIT 1 FOR UPDATE');
-    $stmt->execute([hash('sha256', $token)]);
+    $stmt = $pdo->prepare('SELECT id, nama, nip, email, password, role, provinsi, kabupaten, puskesmas FROM pending_users WHERE token = ? AND expires_at > NOW() LIMIT 1 FOR UPDATE');
+    $stmt->execute([$token]);
     $pendingUser = $stmt->fetch();
 
     if (!$pendingUser) {

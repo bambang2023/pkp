@@ -100,10 +100,9 @@ try {
     }
 
     $token = bin2hex(random_bytes(32));
-    $tokenHash = hash('sha256', $token);
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    $stmt = $pdo->prepare('INSERT INTO pending_users (nama, nip, email, password, role, provinsi, kabupaten, puskesmas, token_hash, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))');
+    $stmt = $pdo->prepare('INSERT INTO pending_users (nama, nip, email, password, role, provinsi, kabupaten, puskesmas, token, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))');
     $stmt->execute([
         $nama,
         $nip,
@@ -113,7 +112,7 @@ try {
         $provinsi,
         $kabupaten !== '' ? $kabupaten : null,
         $puskesmas !== '' ? $puskesmas : null,
-        $tokenHash,
+        $token,
     ]);
 
     $activationUrl = $baseUrl . '/API/activate_account.php?token=' . rawurlencode($token);
@@ -136,8 +135,8 @@ try {
             . "Jika Anda tidak membuat akun ini, abaikan email ini.\n";
         $mailer->send();
     } catch (Throwable $e) {
-        $stmt = $pdo->prepare('DELETE FROM pending_users WHERE token_hash = ?');
-        $stmt->execute([$tokenHash]);
+        $stmt = $pdo->prepare('DELETE FROM pending_users WHERE token = ?');
+        $stmt->execute([$token]);
         error_log('Email aktivasi gagal dikirim melalui SMTP.');
         showResult('Email aktivasi gagal dikirim', 'Akun belum dibuat. Periksa konfigurasi SMTP di file .env.');
     }
