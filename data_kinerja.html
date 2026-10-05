@@ -23,6 +23,21 @@
         .error { color: #842029; background: #f8d7da; border: 1px solid #f5c2c7; }
         .empty { color: #664d03; background: #fff3cd; border: 1px solid #ffecb5; }
         .number { text-align: right; }
+        .button-edit { padding: 6px 12px; color: #212529; background: #ffc107; border: 0; border-radius: 4px; cursor: pointer; }
+        .modal-backdrop { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(15, 23, 42, .55); z-index: 10; }
+        .modal-backdrop[hidden] { display: none; }
+        .modal { width: min(520px, 100%); padding: 24px; background: #fff; border-radius: 8px; box-shadow: 0 12px 35px rgba(0, 0, 0, .2); }
+        .modal-header, .modal-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .modal-header { margin-bottom: 18px; }
+        .modal-header h2 { margin: 0; font-size: 20px; }
+        .modal-close, .button-cancel, .button-save { padding: 9px 12px; border: 1px solid #ced4da; border-radius: 5px; background: #fff; cursor: pointer; }
+        .modal-close { font-size: 20px; line-height: 1; }
+        .modal-details { margin: 0 0 18px; color: #495057; line-height: 1.6; }
+        .modal-field { display: grid; gap: 6px; margin-bottom: 14px; }
+        .modal-field input { width: 100%; padding: 9px; border: 1px solid #ced4da; border-radius: 5px; }
+        .modal-error { margin-bottom: 14px; padding: 10px; color: #842029; background: #f8d7da; border-radius: 5px; }
+        .button-save { color: #fff; background: #0d6efd; border-color: #0d6efd; }
+        .modal-actions { justify-content: flex-end; margin-top: 18px; }
     </style>
 </head>
 <body>
@@ -56,13 +71,35 @@
                     <thead><tr>
                         <th>Bulan</th><th>Kode Indikator</th><th>Indikator</th><th>Target</th><th>Satuan</th>
                         <th>Total Sasaran</th><th>Target Sasaran</th><th>Capaian</th>
-                        <th>Hasil Riil</th><th>Hasil Kinerja</th>
+                        <th>Hasil Riil</th><th>Hasil Kinerja</th><th>Aksi</th>
                     </tr></thead>
                     <tbody id="dataBody"></tbody>
                 </table>
             </div>
         </section>
     </main>
+    <div id="editModal" class="modal-backdrop" hidden>
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <div class="modal-header">
+                <h2 id="editModalTitle">Edit Data Kinerja</h2>
+                <button class="modal-close" type="button" id="closeModalButton" aria-label="Tutup">&times;</button>
+            </div>
+            <p id="editDetails" class="modal-details"></p>
+            <form id="editForm">
+                <label class="modal-field" for="editTotalSasaran">Total Sasaran
+                    <input id="editTotalSasaran" name="jml_sasaran" type="number" min="0" step="any" required>
+                </label>
+                <label class="modal-field" for="editCapaian">Capaian
+                    <input id="editCapaian" name="capaian" type="number" min="0" step="any" required>
+                </label>
+                <div id="modalError" class="modal-error" hidden></div>
+                <div class="modal-actions">
+                    <button class="button-cancel" type="button" id="cancelButton">Batal</button>
+                    <button class="button-save" type="submit" id="saveButton">Simpan Perubahan</button>
+                </div>
+            </form>
+        </section>
+    </div>
     <script>
         const monthNames = {
             '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
@@ -74,6 +111,7 @@
         const body = document.getElementById('dataBody');
         const monthFilter = document.getElementById('bulanFilter');
         let rows = [];
+        let visibleRows = [];
 
         function escapeHtml(value) {
             const element = document.createElement('div');
@@ -88,13 +126,13 @@
         }
 
         function render() {
-            const filtered = monthFilter.value
+            visibleRows = monthFilter.value
                 ? rows.filter(row => String(row.bulan).padStart(2, '0') === monthFilter.value)
                 : [...rows].sort((first, second) => {
                     const monthOrder = Number(first.bulan) - Number(second.bulan);
                     return monthOrder || String(first.kdindikator).localeCompare(String(second.kdindikator));
                 });
-            body.innerHTML = filtered.map(row => `
+            body.innerHTML = visibleRows.map((row, index) => `
                 <tr>
                     <td>${escapeHtml(monthNames[String(row.bulan).padStart(2, '0')] || row.bulan)}</td>
                     <td>${escapeHtml(row.kdindikator)}</td>
@@ -106,11 +144,64 @@
                     <td class="number">${escapeHtml(row.capaian)}</td>
                     <td class="number">${escapeHtml(row.hasil_riil)}</td>
                     <td class="number">${escapeHtml(row.hasil_kinerja)}</td>
+                    <td><button class="button-edit" type="button" data-edit-index="${index}">Edit</button></td>
                 </tr>
             `).join('');
-            table.hidden = filtered.length === 0;
-            if (filtered.length === 0) showStatus('Belum ada data kinerja untuk filter ini.', 'empty');
+            table.hidden = visibleRows.length === 0;
+            if (visibleRows.length === 0) showStatus('Belum ada data kinerja untuk filter ini.', 'empty');
             else statusBox.hidden = true;
+        }
+
+        function openEditModal(row) {
+            document.getElementById('editForm').dataset.bulan = row.bulan;
+            document.getElementById('editForm').dataset.kdindikator = row.kdindikator;
+            document.getElementById('editDetails').textContent = `${monthNames[String(row.bulan).padStart(2, '0')] || row.bulan} | ${row.kdindikator} - ${row.indikator} | Target: ${row.target} ${row.sasaran}`;
+            document.getElementById('editTotalSasaran').value = row.jml_sasaran;
+            document.getElementById('editCapaian').value = row.capaian;
+            document.getElementById('modalError').hidden = true;
+            document.getElementById('editModal').hidden = false;
+            document.getElementById('editTotalSasaran').focus();
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').hidden = true;
+            document.getElementById('modalError').hidden = true;
+        }
+
+        async function updateData(event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const saveButton = document.getElementById('saveButton');
+            const modalError = document.getElementById('modalError');
+            const payload = {
+                bulan: form.dataset.bulan,
+                kdindikator: form.dataset.kdindikator,
+                jml_sasaran: document.getElementById('editTotalSasaran').value,
+                capaian: document.getElementById('editCapaian').value,
+            };
+            saveButton.disabled = true;
+            saveButton.textContent = 'Menyimpan...';
+            modalError.hidden = true;
+
+            try {
+                const response = await fetch('API/update_data_kinerja.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok || result.ok !== true) {
+                    throw new Error(result.error || 'Gagal memperbarui data kinerja.');
+                }
+                closeEditModal();
+                await loadData();
+            } catch (error) {
+                modalError.textContent = error.message || 'Gagal memperbarui data kinerja.';
+                modalError.hidden = false;
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Simpan Perubahan';
+            }
         }
 
         async function loadData() {
@@ -127,6 +218,13 @@
         }
 
         monthFilter.addEventListener('change', render);
+        body.addEventListener('click', event => {
+            const button = event.target.closest('[data-edit-index]');
+            if (button) openEditModal(visibleRows[Number(button.dataset.editIndex)]);
+        });
+        document.getElementById('editForm').addEventListener('submit', updateData);
+        document.getElementById('closeModalButton').addEventListener('click', closeEditModal);
+        document.getElementById('cancelButton').addEventListener('click', closeEditModal);
         loadData();
     </script>
 </body>
