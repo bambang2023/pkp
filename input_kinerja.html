@@ -282,6 +282,14 @@
                 const totalSasaran = Number(sasaranInput.value);
                 const capaian = Number(capaianInput.value);
 
+                if (sasaranInput.value !== '' && Number.isFinite(totalSasaran) && totalSasaran === 0) {
+                    targetSasaranInput.value = 0;
+                    capaianInput.value = 0;
+                    hasilRiilInput.value = 0;
+                    hasilKinerjaInput.value = 0;
+                    return;
+                }
+
                 if (targetInput.value === '' || sasaranInput.value === '' || !Number.isFinite(target) || !Number.isFinite(totalSasaran)) {
                     targetSasaranInput.value = '';
                 } else {
@@ -415,7 +423,9 @@
                     }
 
                     alert(payload.message);
+                    const puskesmasName = puskesmasInput.value;
                     form.reset();
+                    puskesmasInput.value = puskesmasName;
                     resetIndikator('Pilih kluster terlebih dahulu');
                     indikatorData = [];
                     resetSatuan();

@@ -104,6 +104,17 @@
         }
 
         h1 { margin: 0; font-size: 1.35rem; }
+        .target-search {
+            width: min(360px, 100%);
+            padding: 9px 12px;
+            color: #263238;
+            background: #fff;
+            border: 1px solid #cfd8dc;
+            border-radius: 5px;
+            font: inherit;
+            font-size: 0.88rem;
+        }
+        .target-search:focus { outline: 2px solid #90caf9; border-color: #1976d2; }
         .badge {
             padding: 5px 12px;
             color: #0d47a1;
@@ -265,6 +276,7 @@
         <section class="section-card">
             <div class="section-header">
                 <h1>Target Indikator</h1>
+                <input class="target-search" id="targetSearch" type="search" placeholder="Cari kode atau nama indikator..." aria-label="Cari target berdasarkan kode atau nama indikator" autocomplete="off">
                 <span class="badge" id="targetCount">0 data</span>
             </div>
             <div id="loadingState" class="state">Memuat data target...</div>
@@ -334,6 +346,37 @@
                 .join('');
         }
 
+        function renderTargetRows() {
+            const query = document.getElementById('targetSearch').value.trim().toLocaleLowerCase('id');
+            const filteredRows = targetRows.filter(row =>
+                `${row.kd_ind ?? ''} ${row.ind ?? ''}`.toLocaleLowerCase('id').includes(query)
+            );
+            document.getElementById('targetCount').textContent = query
+                ? `${filteredRows.length} dari ${targetRows.length} data`
+                : `${targetRows.length} data`;
+
+            const body = document.getElementById('targetBody');
+            body.innerHTML = filteredRows.map(row => `
+                <tr>
+                    <td>${escapeHtml(row.kd_ind)}</td>
+                    <td>${escapeHtml(row.ind)}</td>
+                    <td class="month">${escapeHtml(row.target)}</td>
+                    ${monthColumns.map(month => `<td class="month">${escapeHtml(row[month])}</td>`).join('')}
+                    <td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>
+                </tr>
+            `).join('');
+
+            if (targetRows.length === 0) {
+                document.getElementById('emptyState').textContent = 'Belum ada data target.';
+                showState('emptyState');
+            } else if (filteredRows.length === 0) {
+                document.getElementById('emptyState').textContent = 'Tidak ada target yang cocok dengan pencarian.';
+                showState('emptyState');
+            } else {
+                showState('tableWrapper');
+            }
+        }
+
         async function loadTarget() {
             try {
                 const userResponse = await fetch('API/get_current_user.php', { headers: { Accept: 'application/json' } });
@@ -357,19 +400,7 @@
                 }
 
                 targetRows = payload.data;
-                document.getElementById('targetCount').textContent = payload.data.length + ' data';
-                const body = document.getElementById('targetBody');
-                body.innerHTML = payload.data.map(row => `
-                    <tr>
-                        <td>${escapeHtml(row.kd_ind)}</td>
-                        <td>${escapeHtml(row.ind)}</td>
-                        <td class="month">${escapeHtml(row.target)}</td>
-                        ${monthColumns.map(month => `<td class="month">${escapeHtml(row[month])}</td>`).join('')}
-                        <td><button class="button-edit" type="button" data-edit-id="${escapeAttribute(row.kd_ind)}">Edit</button></td>
-                    </tr>
-                `).join('');
-
-                showState(payload.data.length ? 'tableWrapper' : 'emptyState');
+                renderTargetRows();
             } catch (error) {
                 document.getElementById('errorState').textContent = error.message || 'Gagal memuat data target.';
                 showState('errorState');
@@ -474,6 +505,7 @@
             if (row) openEditModal(row);
         });
 
+        document.getElementById('targetSearch').addEventListener('input', renderTargetRows);
         document.getElementById('targetForm').addEventListener('submit', updateTarget);
         document.getElementById('closeModalButton').addEventListener('click', closeEditModal);
         document.getElementById('cancelButton').addEventListener('click', closeEditModal);
