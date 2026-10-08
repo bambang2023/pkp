@@ -179,18 +179,6 @@
                         <label for="bulan">Bulan:</label>
                         <select id="bulan" name="bulan" required>
                             <option value="">Pilih bulan</option>
-                            <option value="01">Januari</option>
-                            <option value="02">Februari</option>
-                            <option value="03">Maret</option>
-                            <option value="04">April</option>
-                            <option value="05">Mei</option>
-                            <option value="06">Juni</option>
-                            <option value="07">Juli</option>
-                            <option value="08">Agustus</option>
-                            <option value="09">September</option>
-                            <option value="10">Oktober</option>
-                            <option value="11">November</option>
-                            <option value="12">Desember</option>
                         </select>
                     </div>
 
@@ -245,6 +233,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const puskesmasInput = document.getElementById('puskesmas');
+            const bulanSelect = document.getElementById('bulan');
             const klusterSelect = document.getElementById('kluster');
             const indikatorSelect = document.getElementById('kd');
             const satuanSelect = document.getElementById('satuan');
@@ -275,6 +264,21 @@
 
             function formatDecimal(value) {
                 return Number(value.toFixed(2));
+            }
+
+            async function loadMonthOptions() {
+                const response = await fetch('API/get_month_options.php', {
+                    headers: { Accept: 'application/json' },
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.ok !== true || !Array.isArray(payload.data)) {
+                    throw new Error(payload.error || 'Gagal memuat pilihan bulan.');
+                }
+
+                bulanSelect.innerHTML = '<option value="">Pilih bulan</option>';
+                payload.data.forEach(month => {
+                    bulanSelect.add(new Option(month.nama, month.bulan));
+                });
             }
 
             function updateDerivedValues() {
@@ -446,7 +450,11 @@
                 }
 
                 const payload = await response.json();
-                if (!payload.ok || !payload.user || !payload.user.puskesmas) {
+                if (!payload.ok || !payload.user || payload.user.role !== 'puskesmas') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!payload.user.puskesmas) {
                     throw new Error(payload.error || 'Nama puskesmas tidak tersedia.');
                 }
 
@@ -455,6 +463,14 @@
                 puskesmasInput.value = '';
                 puskesmasInput.placeholder = 'Nama puskesmas tidak tersedia';
                 console.error('Gagal memuat nama puskesmas:', error);
+            }
+
+            try {
+                await loadMonthOptions();
+            } catch (error) {
+                bulanSelect.innerHTML = '<option value="">Pilihan bulan tidak tersedia</option>';
+                errorBox.textContent = error.message || 'Gagal memuat pilihan bulan.';
+                errorBox.style.display = 'block';
             }
 
             try {

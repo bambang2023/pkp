@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kontrol Bulan - PKP Jawa Timur</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { min-height: 100vh; background: #f0f2f5; }
+        .navbar { min-height: 70px; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; gap: 20px; background: linear-gradient(135deg, #1a237e, #0d47a1); color: white; }
+        .navbar-brand { font-size: 1.15rem; font-weight: 700; }
+        .navbar-menu { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+        .nav-link { padding: 10px 14px; border-radius: 4px; color: #bbdefb; text-decoration: none; }
+        .nav-link:hover, .nav-link[aria-current="page"] { background: rgba(255,255,255,.12); color: white; }
+        .navbar-user { display: flex; align-items: center; gap: 12px; }
+        .user-copy { text-align: right; }
+        .user-name { font-weight: 650; }
+        .user-role { margin-top: 2px; color: #bbdefb; font-size: .8rem; }
+        .user-avatar { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #42a5f5; color: white; font-weight: 700; }
+        .btn-logout { padding: 8px 12px; border: 1px solid rgba(255,255,255,.4); border-radius: 4px; background: transparent; color: white; cursor: pointer; font: inherit; }
+        .main-content { max-width: 960px; margin: 0 auto; padding: 34px 22px 56px; }
+        .page-heading { margin-bottom: 24px; }
+        .eyebrow { margin: 0 0 7px; color: #0d47a1; font-size: .76rem; font-weight: 700; text-transform: uppercase; }
+        h1 { margin: 0; color: #172b4d; font-size: 1.8rem; }
+        .description { margin: 8px 0 0; color: #5f6b7a; }
+        .panel { overflow: hidden; border: 1px solid #d9e0e8; border-radius: 6px; background: white; }
+        .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid #e6eaf0; }
+        .panel-heading h2 { margin: 0; color: #253858; font-size: 1rem; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 18px; border-bottom: 1px solid #edf0f3; text-align: left; }
+        th { background: #f7f9fb; color: #5e6c84; font-size: .75rem; text-transform: uppercase; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .month-name { font-weight: 600; color: #253858; }
+        .status { color: #5e6c84; font-size: .86rem; }
+        .month-toggle { width: 18px; height: 18px; accent-color: #176b5b; cursor: pointer; vertical-align: middle; }
+        .month-toggle:focus-visible { outline: 3px solid #8db7f0; outline-offset: 3px; }
+        .actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding: 16px 18px; border-top: 1px solid #e6eaf0; }
+        .save-button { min-height: 40px; padding: 0 18px; border: 0; border-radius: 4px; background: #176b5b; color: white; cursor: pointer; font: inherit; font-weight: 650; }
+        .save-button:hover:not(:disabled) { background: #105547; }
+        .save-button:disabled { cursor: wait; opacity: .65; }
+        .message { margin: 0; color: #405064; font-size: .9rem; }
+        .message.error { color: #a12622; }
+        .loading, .error-state { padding: 28px 18px; color: #5e6c84; }
+        .error-state { color: #a12622; }
+        [hidden] { display: none !important; }
+        @media (max-width: 760px) {
+            .navbar { padding: 12px 14px; flex-wrap: wrap; }
+            .navbar-brand { flex: 1; }
+            .navbar-menu { order: 3; width: 100%; justify-content: flex-start; }
+            .nav-link { padding: 8px 10px; }
+            .user-copy { display: none; }
+            .main-content { padding: 24px 14px 40px; }
+            .actions { align-items: stretch; flex-direction: column-reverse; }
+            .save-button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">PKP Jawa Timur</div>
+        <div class="navbar-menu">
+            <a href="provinsi.html" class="nav-link">Dashboard</a>
+            <a href="kluster.html" class="nav-link">Kluster</a>
+            <a href="indikator.html" class="nav-link">Indikator</a>
+            <a href="target.html" class="nav-link">Target</a>
+            <a href="control.html" class="nav-link" aria-current="page">Kontrol Bulan</a>
+        </div>
+        <div class="navbar-user">
+            <div class="user-copy"><div class="user-name" id="userName">-</div><div class="user-role">Provinsi</div></div>
+            <span class="user-avatar" id="userAvatar">P</span>
+            <button class="btn-logout" id="logoutButton" type="button">Keluar</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="page-heading">
+            <p class="eyebrow">Pengaturan input kinerja</p>
+            <h1>Kontrol Bulan</h1>
+            <p class="description">Pilih bulan yang tersedia pada form input kinerja Puskesmas.</p>
+        </header>
+        <section class="panel" aria-labelledby="monthTableTitle">
+            <div class="panel-heading"><h2 id="monthTableTitle">Daftar bulan pelaporan</h2></div>
+            <div class="loading" id="loadingState">Memuat pengaturan bulan...</div>
+            <div class="error-state" id="errorState" role="alert" hidden></div>
+            <form id="monthForm" hidden>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th scope="col">Bulan</th><th scope="col">Status</th><th scope="col">Aktif</th></tr></thead>
+                        <tbody id="monthRows"></tbody>
+                    </table>
+                </div>
+                <div class="actions">
+                    <p class="message" id="formMessage" role="status" aria-live="polite"></p>
+                    <button class="save-button" id="saveButton" type="submit">Simpan Pengaturan</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const monthNames = [
+            ['01', 'Januari'], ['02', 'Februari'], ['03', 'Maret'], ['04', 'April'],
+            ['05', 'Mei'], ['06', 'Juni'], ['07', 'Juli'], ['08', 'Agustus'],
+            ['09', 'September'], ['10', 'Oktober'], ['11', 'November'], ['12', 'Desember'],
+        ];
+        const form = document.getElementById('monthForm');
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const monthRows = document.getElementById('monthRows');
+        const saveButton = document.getElementById('saveButton');
+        const formMessage = document.getElementById('formMessage');
+
+        async function requestJson(url, options = {}) {
+            const response = await fetch(url, {
+                ...options,
+                headers: { Accept: 'application/json', ...(options.headers || {}) },
+            });
+            const payload = await response.json();
+            if (!response.ok || payload.ok !== true) {
+                throw new Error(payload.error || 'Permintaan gagal diproses.');
+            }
+            return payload;
+        }
+
+        function renderMonths(activeMonths) {
+            const activeSet = new Set(activeMonths);
+            monthRows.innerHTML = monthNames.map(([month, name]) => `
+                <tr>
+                    <td class="month-name">${name}</td>
+                    <td class="status" data-status="${month}">${activeSet.has(month) ? 'Aktif' : 'Nonaktif'}</td>
+                    <td><input class="month-toggle" type="checkbox" name="bulan[]" value="${month}" aria-label="Aktifkan ${name}" ${activeSet.has(month) ? 'checked' : ''}></td>
+                </tr>
+            `).join('');
+            monthRows.querySelectorAll('.month-toggle').forEach(toggle => {
+                toggle.addEventListener('change', () => {
+                    monthRows.querySelector(`[data-status="${toggle.value}"]`).textContent = toggle.checked ? 'Aktif' : 'Nonaktif';
+                    formMessage.textContent = '';
+                    formMessage.className = 'message';
+                });
+            });
+        }
+
+        async function loadControl() {
+            try {
+                const userPayload = await requestJson('API/get_current_user.php');
+                if (userPayload.user?.role !== 'provinsi') {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                document.getElementById('userName').textContent = userPayload.user.nama || '-';
+                document.getElementById('userAvatar').textContent = (userPayload.user.nama || 'P').charAt(0).toUpperCase();
+                const settings = await requestJson('API/get_month_settings.php');
+                renderMonths(settings.data.filter(month => Number(month.aktif) === 1).map(month => month.bulan));
+                loadingState.hidden = true;
+                form.hidden = false;
+            } catch (error) {
+                loadingState.hidden = true;
+                errorState.textContent = error.message || 'Gagal memuat pengaturan bulan.';
+                errorState.hidden = false;
+            }
+        }
+
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            saveButton.disabled = true;
+            formMessage.textContent = 'Menyimpan pengaturan...';
+            formMessage.className = 'message';
+            try {
+                const activeMonths = Array.from(form.querySelectorAll('.month-toggle:checked'), input => input.value);
+                const payload = await requestJson('API/update_month_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bulan_aktif: activeMonths }),
+                });
+                formMessage.textContent = payload.message || 'Pengaturan bulan berhasil disimpan.';
+            } catch (error) {
+                formMessage.textContent = error.message || 'Gagal menyimpan pengaturan bulan.';
+                formMessage.className = 'message error';
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            await fetch('API/logout.php', { method: 'POST' }).catch(() => {});
+            window.location.href = 'index.html';
+        });
+
+        loadControl();
+    </script>
+</body>
+</html>

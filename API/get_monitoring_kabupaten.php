@@ -76,7 +76,8 @@ try {
     $stmt = $pdo->prepare(
         'SELECT p.kode, p.nama,
             COUNT(DISTINCT i.kd_ind) AS jumlah_terisi,
-            AVG(dk.hasil_kinerja) AS rata_hasil_kinerja
+            SUM(dk.hasil_kinerja) AS jumlah_hasil_kinerja,
+            COUNT(CASE WHEN dk.jml_sasaran = 0 THEN 1 END) AS sasaran_nol
          FROM ref_puskesmas AS p
          LEFT JOIN data_kinerja AS dk
                 ON dk.kdpusk COLLATE utf8mb4_general_ci = p.kode COLLATE utf8mb4_general_ci' . $performanceJoin . '
@@ -101,15 +102,20 @@ try {
         $row['persentase_pengisian'] = $totalIndicators > 0
             ? round(($row['jumlah_terisi'] / $totalIndicators) * 100, 1)
             : 0;
-        $row['rata_hasil_kinerja'] = $row['rata_hasil_kinerja'] !== null
-            ? round((float) $row['rata_hasil_kinerja'], 2)
+        $performanceDenominator = 257 - (int) $row['sasaran_nol'];
+        $rawPerformanceAverage = $row['jumlah_hasil_kinerja'] !== null && $performanceDenominator > 0
+            ? (float) $row['jumlah_hasil_kinerja'] / $performanceDenominator
             : null;
+        $row['rata_hasil_kinerja'] = $rawPerformanceAverage !== null
+            ? round($rawPerformanceAverage, 2)
+            : null;
+        unset($row['jumlah_hasil_kinerja'], $row['sasaran_nol']);
         $totalFilled += $row['jumlah_terisi'];
         if ($row['jumlah_terisi'] > 0) {
             $puskesmasSubmitting++;
         }
-        if ($row['rata_hasil_kinerja'] !== null) {
-            $performanceSum += (float) $row['rata_hasil_kinerja'];
+        if ($rawPerformanceAverage !== null) {
+            $performanceSum += $rawPerformanceAverage;
             $performanceCount++;
         }
     }

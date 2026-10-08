@@ -52,13 +52,19 @@ foreach ($numericFields as $field) {
 
 try {
     $userStmt = $pdo->prepare(
-        'SELECT u.nip, u.puskesmas AS kdpusk
+        'SELECT u.nip, u.puskesmas AS kdpusk, u.role
          FROM users u
          WHERE u.id = :user_id
          LIMIT 1'
     );
     $userStmt->execute([':user_id' => (int) $_SESSION['user_id']]);
     $user = $userStmt->fetch();
+
+    if (!$user || $user['role'] !== 'puskesmas') {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'error' => 'Halaman ini hanya tersedia untuk role puskesmas.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     if (!$user || trim((string) ($user['nip'] ?? '')) === '' || trim((string) ($user['kdpusk'] ?? '')) === '') {
         http_response_code(400);
@@ -67,6 +73,22 @@ try {
     }
 
     $bulan = trim((string) $input['bulan']);
+    if (!preg_match('/^(0[1-9]|1[0-2])$/', $bulan)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Pilihan bulan tidak valid.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $monthStmt = $pdo->prepare(
+        'SELECT aktif FROM pengaturan_bulan_kinerja WHERE bulan = :bulan LIMIT 1'
+    );
+    $monthStmt->execute([':bulan' => $bulan]);
+    if ((int) $monthStmt->fetchColumn() !== 1) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Bulan tersebut sedang tidak dibuka untuk input.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $kdIndikator = trim((string) $input['kd']);
 
     $duplicateStmt = $pdo->prepare(
