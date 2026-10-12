@@ -36,6 +36,8 @@
         .refresh { border-color: #1e6656; background: #1e6656; color: #fff; cursor: pointer; font-weight: 600; }
         .refresh:hover { background: #285448; }
         .refresh:disabled { opacity: .6; cursor: wait; }
+        .download { min-height: 40px; padding: 0 12px; border: 1px solid #c8d2cc; border-radius: 4px; background: #fff; color: #1e6656; cursor: pointer; font: inherit; font-weight: 600; }
+        .download:hover { background: #edf4ef; }
         .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
         .stat { min-height: 132px; padding: 17px 18px; border: 1px solid #dce3de; border-top: 3px solid #1e6656; border-radius: 4px; background: white; }
         .stat:nth-child(2) { border-top-color: #d48a45; }
@@ -103,6 +105,11 @@
                 <p class="subhead" id="districtSubtitle">Dashboard capaian kinerja Puskesmas</p>
             </div>
             <div class="filter">
+                <label for="clusterFilter">Kluster
+                    <select id="clusterFilter">
+                        <option value="">Memuat kluster...</option>
+                    </select>
+                </label>
                 <label for="monthFilter">Bulan pelaporan
                     <select id="monthFilter">
                         <option value="">Semua bulan</option>
@@ -115,6 +122,7 @@
                     </select>
                 </label>
                 <button class="refresh" id="refreshButton" type="button">Perbarui</button>
+                <button class="download" id="downloadCsvButton" type="button">Unduh CSV</button>
             </div>
         </header>
 
@@ -141,6 +149,7 @@
         <footer class="footer">PKP Jawa Timur · Monitoring tingkat kabupaten</footer>
     </main>
     <script>
+        const clusterFilter = document.getElementById('clusterFilter');
         const monthFilter = document.getElementById('monthFilter');
         const refreshButton = document.getElementById('refreshButton');
         const message = document.getElementById('message');
@@ -148,6 +157,21 @@
         const facilityRows = document.getElementById('facilityRows');
         const numberFormat = new Intl.NumberFormat('id-ID');
         const monthNames = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        let clusterOptionsLoaded = false;
+
+        async function loadClusterOptions() {
+            const response = await fetch('API/get_kluster.php', { headers: { Accept: 'application/json' } });
+            const payload = await response.json();
+            if (!response.ok || payload.ok !== true || !Array.isArray(payload.data)) {
+                throw new Error(payload.error || 'Gagal memuat pilihan kluster.');
+            }
+
+            clusterFilter.innerHTML = '<option value="">Semua kluster</option>';
+            payload.data.forEach(cluster => {
+                clusterFilter.add(new Option(`${cluster.kd} - ${cluster.uraian}`, cluster.kd));
+            });
+            clusterOptionsLoaded = true;
+        }
 
         function escapeHtml(value) {
             const element = document.createElement('span');
@@ -168,9 +192,13 @@
                 ? '-'
                 : numberFormat.format(Number(summary.rata_hasil_kinerja));
             document.getElementById('submittingNote').textContent = `${numberFormat.format(summary.jumlah_terisi)} dari ${numberFormat.format(summary.total_kemungkinan)} pengisian indikator`;
-            document.getElementById('periodLabel').textContent = monthFilter.value
+            const periodParts = [monthFilter.value
                 ? `Periode ${monthNames[Number(monthFilter.value)]}`
-                : 'Akumulasi semua bulan';
+                : 'Semua bulan'];
+            if (clusterFilter.value) {
+                periodParts.push(clusterFilter.options[clusterFilter.selectedIndex].text);
+            }
+            document.getElementById('periodLabel').textContent = periodParts.join(' · ');
 
             facilityRows.innerHTML = facilities.map((facility, index) => {
                 const rate = Number(facility.persentase_pengisian || 0);
@@ -203,11 +231,13 @@
                     window.location.href = 'index.html';
                     return;
                 }
+                if (!clusterOptionsLoaded) await loadClusterOptions();
                 document.getElementById('districtTitle').textContent = userPayload.user.kabupaten_nama || 'Nama kabupaten tidak tersedia';
                 document.getElementById('userName').textContent = userPayload.user.nama || '-';
                 document.getElementById('userAvatar').textContent = (userPayload.user.nama || 'K').charAt(0).toUpperCase();
                 const params = new URLSearchParams();
                 if (monthFilter.value) params.set('bulan', monthFilter.value);
+                if (clusterFilter.value) params.set('kd_kluster', clusterFilter.value);
                 const response = await fetch(`API/get_monitoring_kabupaten.php?${params}`, { headers: { Accept: 'application/json' } });
                 const payload = await response.json();
                 if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'Gagal memuat capaian kabupaten.');
@@ -229,6 +259,13 @@
             await fetch('API/logout.php', { method: 'POST' }).catch(() => {});
             window.location.href = 'index.html';
         });
+        document.getElementById('downloadCsvButton').addEventListener('click', () => {
+            const params = new URLSearchParams();
+            if (monthFilter.value) params.set('bulan', monthFilter.value);
+            if (clusterFilter.value) params.set('kd_kluster', clusterFilter.value);
+            window.location.href = `API/download_data_kinerja_kabupaten.php?${params}`;
+        });
+        clusterFilter.addEventListener('change', loadDashboard);
         monthFilter.addEventListener('change', loadDashboard);
         refreshButton.addEventListener('click', loadDashboard);
         loadDashboard();

@@ -27,6 +27,7 @@ if ($month !== '' && !preg_match('/^(0[1-9]|1[0-2])$/', $month)) {
     echo json_encode(['ok' => false, 'error' => 'Filter bulan tidak valid.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+$cluster = trim((string) ($_GET['kd_kluster'] ?? ''));
 
 try {
     $userStmt = $pdo->prepare(
@@ -66,7 +67,7 @@ try {
     }
 
     $totalIndicators = (int) $pdo->query('SELECT COUNT(*) FROM indikator')->fetchColumn();
-    $performanceJoin = '';
+        $performanceJoin = '';
     $performanceParams = [':kabupaten' => $kabupatenCode];
     if ($month !== '') {
         $performanceJoin = ' AND dk.bulan = :bulan';
@@ -102,7 +103,7 @@ try {
         $row['persentase_pengisian'] = $totalIndicators > 0
             ? round(($row['jumlah_terisi'] / $totalIndicators) * 100, 1)
             : 0;
-        $performanceDenominator = 257 - (int) $row['sasaran_nol'];
+        $performanceDenominator = $totalIndicators - (int) $row['sasaran_nol'];
         $rawPerformanceAverage = $row['jumlah_hasil_kinerja'] !== null && $performanceDenominator > 0
             ? (float) $row['jumlah_hasil_kinerja'] / $performanceDenominator
             : null;
