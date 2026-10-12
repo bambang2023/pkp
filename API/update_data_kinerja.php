@@ -15,9 +15,15 @@ if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     exit;
 }
 
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['user_id'], $_SESSION['role'])) {
     http_response_code(401);
     echo json_encode(['ok' => false, 'error' => 'Unauthorized. Silakan login terlebih dahulu.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($_SESSION['role'] !== 'puskesmas') {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'error' => 'Halaman ini hanya tersedia untuk role puskesmas.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

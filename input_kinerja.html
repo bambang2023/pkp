@@ -40,7 +40,9 @@
 
         .navbar-menu {
             flex-grow: 1;
-            text-align: right;
+            display: flex;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .nav-link {
@@ -52,6 +54,7 @@
             transition: all 0.2s ease-in-out;
         }
         .nav-link:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        .nav-link[aria-current="page"] { color: white; background-color: rgba(255,255,255,0.16); }
 
         /* Dropdown Menu */
         .dropdown {
@@ -159,9 +162,12 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-brand">Form Input Kinerja Puskesmas</div>
-        <div class="navbar-menu">
-            <a href="puskesmas.html" class="nav-link">Kembali</a>
+        <div class="navbar-brand">PKP Jawa Timur</div>
+        <div class="navbar-menu" aria-label="Navigasi Puskesmas">
+            <a href="puskesmas.html" class="nav-link">Profil</a>
+            <a href="input_kinerja.html" class="nav-link" aria-current="page">Input Kinerja</a>
+            <a href="data_kinerja.html" class="nav-link">Data Kinerja</a>
+            <a href="monitoring.html" class="nav-link">Laporan</a>
         </div>
     </nav>
 
@@ -450,7 +456,14 @@
                 }
 
                 const payload = await response.json();
-                if (!payload.ok || !payload.user || payload.user.role !== 'puskesmas') {
+                if (response.status === 401) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!response.ok || !payload.ok || !payload.user) {
+                    throw new Error(payload.error || 'Gagal memeriksa sesi pengguna.');
+                }
+                if (payload.user.role !== 'puskesmas') {
                     window.location.href = 'index.html';
                     return;
                 }

@@ -13,18 +13,20 @@
         }
         * { box-sizing: border-box; }
         body { margin: 0; min-height: 100vh; }
-        .navbar { min-height: 64px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #174c43; color: white; }
+        .navbar { min-height: 64px; padding: 8px 28px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #174c43; color: white; }
         .brand { font-weight: 700; letter-spacing: .02em; }
-        .nav-links { display: flex; align-items: center; gap: 18px; }
-        .nav-links a { color: #e3f2eb; text-decoration: none; font-size: .92rem; }
-        .nav-links a:hover { color: #fff; text-decoration: underline; }
+        .nav-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .nav-links a { padding: 8px 10px; border-radius: 5px; color: #e3f2eb; text-decoration: none; font-size: .92rem; }
+        .nav-links a:hover, .nav-links a[aria-current="page"] { color: #fff; background: rgba(255,255,255,.14); }
         main { max-width: 1280px; margin: 0 auto; padding: 32px 24px 56px; }
         .heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
         .eyebrow { margin: 0 0 8px; color: #39776a; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
         h1 { margin: 0; color: #173b34; font-size: 2rem; }
         .subtitle { margin: 8px 0 0; color: #60726c; }
-        .controls { display: flex; align-items: end; gap: 10px; }
+        .controls { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
         .controls label { display: grid; gap: 6px; color: #53645f; font-size: .82rem; font-weight: 600; }
+        .cluster-filters { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; margin: -8px 0 22px; }
+        .cluster-filters label { display: grid; gap: 6px; color: #53645f; font-size: .82rem; font-weight: 600; }
         select, button { min-height: 40px; border: 1px solid #c7d2cc; border-radius: 5px; padding: 0 12px; background: #fff; color: #20312d; font: inherit; }
         button { border-color: #174c43; background: #174c43; color: #fff; cursor: pointer; font-weight: 600; }
         button:hover { background: #21685a; }
@@ -60,6 +62,7 @@
             .controls { align-items: end; }
             .controls label { flex: 1; }
             select { width: 100%; }
+            .cluster-filters { grid-template-columns: 1fr 1fr; }
             .summary { grid-template-columns: 1fr 1fr; gap: 9px; }
             .metric:first-child { grid-column: 1 / -1; }
             .metric { padding: 14px; }
@@ -73,7 +76,9 @@
         <a class="brand" href="puskesmas.html" style="color:inherit;text-decoration:none">PKP Jawa Timur</a>
         <div class="nav-links">
             <a href="puskesmas.html">Profil</a>
+            <a href="input_kinerja.html">Input Kinerja</a>
             <a href="data_kinerja.html">Data Kinerja</a>
+            <a href="monitoring.html" aria-current="page">Laporan</a>
         </div>
     </nav>
     <main>
@@ -96,8 +101,23 @@
                     </select>
                 </label>
                 <button id="refreshButton" type="button" aria-label="Muat ulang monitoring">Muat ulang</button>
+                <button id="downloadCsvButton" type="button" disabled>Unduh CSV</button>
             </div>
         </header>
+        <section class="cluster-filters" aria-label="Filter kluster">
+            <label for="level0Filter">Kluster level 0
+                <select id="level0Filter"><option value="">Semua kluster level 0</option></select>
+            </label>
+            <label for="level1Filter">Kluster level 1
+                <select id="level1Filter" disabled><option value="">Semua kluster level 1</option></select>
+            </label>
+            <label for="level2Filter">Kluster level 2
+                <select id="level2Filter" disabled><option value="">Semua kluster level 2</option></select>
+            </label>
+            <label for="level3Filter">Kluster level 3
+                <select id="level3Filter" disabled><option value="">Semua kluster level 3</option></select>
+            </label>
+        </section>
 
         <section class="summary" aria-label="Ringkasan pengisian">
             <div class="metric">
@@ -126,10 +146,97 @@
     <script>
         const monthFilter = document.getElementById('monthFilter');
         const refreshButton = document.getElementById('refreshButton');
+        const downloadCsvButton = document.getElementById('downloadCsvButton');
         const message = document.getElementById('message');
         const tableWrap = document.getElementById('tableWrap');
         const body = document.getElementById('monitoringBody');
+        const level0Filter = document.getElementById('level0Filter');
+        const level1Filter = document.getElementById('level1Filter');
+        const level2Filter = document.getElementById('level2Filter');
+        const level3Filter = document.getElementById('level3Filter');
         const numberFormat = new Intl.NumberFormat('id-ID');
+        let monitoringData = null;
+
+        function populateFilter(select, rows, codeKey, placeholder) {
+            const currentValue = select.value;
+            select.replaceChildren(new Option(placeholder, ''));
+            rows.forEach(row => {
+                select.add(new Option(`${row[codeKey]} - ${row.uraian}`, row[codeKey]));
+            });
+            select.disabled = rows.length === 0;
+            select.value = rows.some(row => String(row[codeKey]) === currentValue) ? currentValue : '';
+        }
+
+        function updateClusterFilters() {
+            if (!monitoringData) return;
+
+            populateFilter(level0Filter, monitoringData.kluster, 'kd', 'Semua kluster level 0');
+            const level1Rows = monitoringData.kluster_l1.filter(row =>
+                !level0Filter.value || String(row.kd_0) === level0Filter.value
+            );
+            populateFilter(level1Filter, level1Rows, 'kd_1', 'Semua kluster level 1');
+
+            const allowedLevel1 = new Set(level1Rows.map(row => String(row.kd_1)));
+            const level2Rows = monitoringData.kluster_l2.filter(row =>
+                allowedLevel1.has(String(row.kd_1)) &&
+                (!level1Filter.value || String(row.kd_1) === level1Filter.value)
+            );
+            populateFilter(level2Filter, level2Rows, 'kd_2', 'Semua kluster level 2');
+
+            const allowedLevel2 = new Set(level2Rows.map(row => String(row.kd_2)));
+            const level3Rows = monitoringData.kluster_l3.filter(row =>
+                allowedLevel2.has(String(row.kd_2)) &&
+                (!level2Filter.value || String(row.kd_2) === level2Filter.value)
+            );
+            populateFilter(level3Filter, level3Rows, 'kd_3', 'Semua kluster level 3');
+        }
+
+        function renderFilteredMonitoring() {
+            if (!monitoringData) return;
+
+            const selectedLevel0 = level0Filter.value;
+            const selectedLevel1 = level1Filter.value;
+            const selectedLevel2 = level2Filter.value;
+            const selectedLevel3 = level3Filter.value;
+            const clusters = monitoringData.kluster.filter(row =>
+                !selectedLevel0 || String(row.kd) === selectedLevel0
+            );
+            const level1 = monitoringData.kluster_l1.filter(row =>
+                (!selectedLevel0 || String(row.kd_0) === selectedLevel0) &&
+                (!selectedLevel1 || String(row.kd_1) === selectedLevel1)
+            );
+            const level1Codes = new Set(level1.map(row => String(row.kd_1)));
+            const level2 = monitoringData.kluster_l2.filter(row =>
+                level1Codes.has(String(row.kd_1)) &&
+                (!selectedLevel2 || String(row.kd_2) === selectedLevel2)
+            );
+            const level2Codes = new Set(level2.map(row => String(row.kd_2)));
+            const level3 = monitoringData.kluster_l3.filter(row =>
+                level2Codes.has(String(row.kd_2)) &&
+                (!selectedLevel3 || String(row.kd_3) === selectedLevel3)
+            );
+            const level3Codes = new Set(level3.map(row => String(row.kd_3)));
+            const indicators = monitoringData.indikator.filter(row => level3Codes.has(String(row.kd_3)));
+
+            render({
+                ...monitoringData,
+                kluster: clusters,
+                kluster_l1: level1,
+                kluster_l2: level2,
+                kluster_l3: level3,
+                indikator: indicators,
+            });
+        }
+
+        function downloadCsv() {
+            const params = new URLSearchParams();
+            if (monthFilter.value) params.set('bulan', monthFilter.value);
+            if (level0Filter.value) params.set('kd_0', level0Filter.value);
+            if (level1Filter.value) params.set('kd_1', level1Filter.value);
+            if (level2Filter.value) params.set('kd_2', level2Filter.value);
+            if (level3Filter.value) params.set('kd_3', level3Filter.value);
+            window.location.href = `API/download_monitoring_indikator.php?${params}`;
+        }
 
         function escapeHtml(value) {
             const element = document.createElement('span');
@@ -196,9 +303,9 @@
         function render(data) {
             const indicatorList = Array.isArray(data.indikator) ? data.indikator : [];
             const completedCodes = new Set((data.terisi || []).map(String));
-            const indicators = Number(data.total_indikator ?? indicatorList.length);
+            const indicators = indicatorList.length;
             const matchedCount = indicatorList.reduce((total, indicator) => total + (completedCodes.has(String(indicator.kd_ind)) ? 1 : 0), 0);
-            const filledCount = Number(data.jumlah_terisi ?? matchedCount);
+            const filledCount = matchedCount;
             const percentage = indicators ? (filledCount / indicators) * 100 : 0;
 
             document.getElementById('filledSummary').textContent = `${numberFormat.format(filledCount)} (${percentage.toFixed(1)}%)`;
@@ -232,6 +339,7 @@
 
         async function loadMonitoring() {
             refreshButton.disabled = true;
+            downloadCsvButton.disabled = true;
             message.hidden = false;
             message.className = 'message';
             message.textContent = 'Memuat monitoring indikator...';
@@ -239,7 +347,14 @@
             try {
                 const userResponse = await fetch('API/get_current_user.php', { headers: { Accept: 'application/json' } });
                 const userPayload = await userResponse.json();
-                if (!userResponse.ok || !userPayload.ok || userPayload.user?.role !== 'puskesmas') {
+                if (userResponse.status === 401) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!userResponse.ok || !userPayload.ok || !userPayload.user) {
+                    throw new Error(userPayload.error || 'Gagal memeriksa sesi pengguna.');
+                }
+                if (userPayload.user.role !== 'puskesmas') {
                     window.location.href = 'index.html';
                     return;
                 }
@@ -249,7 +364,10 @@
                 const payload = await response.json();
                 if (!response.ok || payload.ok !== true) throw new Error(payload.error || 'Gagal memuat monitoring indikator.');
                 document.getElementById('subtitle').textContent = `Puskesmas: ${userPayload.user.puskesmas || userPayload.user.puskesmas_kode || '-'}`;
-                render(payload.data);
+                monitoringData = payload.data;
+                updateClusterFilters();
+                renderFilteredMonitoring();
+                downloadCsvButton.disabled = false;
             } catch (error) {
                 message.className = 'message error';
                 message.textContent = error.message || 'Terjadi kesalahan saat memuat data.';
@@ -260,7 +378,27 @@
         }
 
         monthFilter.addEventListener('change', loadMonitoring);
+        downloadCsvButton.addEventListener('click', downloadCsv);
         refreshButton.addEventListener('click', loadMonitoring);
+        level0Filter.addEventListener('change', () => {
+            level1Filter.value = '';
+            level2Filter.value = '';
+            level3Filter.value = '';
+            updateClusterFilters();
+            renderFilteredMonitoring();
+        });
+        level1Filter.addEventListener('change', () => {
+            level2Filter.value = '';
+            level3Filter.value = '';
+            updateClusterFilters();
+            renderFilteredMonitoring();
+        });
+        level2Filter.addEventListener('change', () => {
+            level3Filter.value = '';
+            updateClusterFilters();
+            renderFilteredMonitoring();
+        });
+        level3Filter.addEventListener('change', renderFilteredMonitoring);
         loadMonitoring();
     </script>
 </body>

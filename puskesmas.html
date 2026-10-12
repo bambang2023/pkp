@@ -42,6 +42,10 @@
             flex-grow: 1;
             text-align: center;
         }
+        .navbar-menu a[aria-current="page"] {
+            color: white;
+            background-color: rgba(255,255,255,0.16);
+        }
 
         .nav-link {
             color: #bbdefb;
@@ -174,22 +178,62 @@
             padding: 2rem;
         }
 
-        .info-card {
+        .welcome-card, .info-card, .feature-card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             padding: 2rem;
         }
-        .info-card h2 {
+        .welcome-card {
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff, #eaf3ff);
+        }
+        .welcome-card h1, .info-card h2, .feature-card h2 {
             font-size: 1.5rem;
             color: #1a237e;
             margin-bottom: 0.5rem;
         }
-        .info-card p {
+        .welcome-card p, .info-card p, .feature-card p {
             font-size: 1rem;
             color: #555;
             line-height: 1.6;
         }
+        .profile-grid, .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .profile-item {
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f5f8fc;
+        }
+        .profile-item dt { color: #637083; font-size: .85rem; }
+        .profile-item dd { margin: .25rem 0 0; color: #26374a; font-weight: 600; }
+        .feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .feature-card { display: flex; flex-direction: column; align-items: flex-start; }
+        .feature-card h2 { font-size: 1.15rem; }
+        .feature-card p { flex-grow: 1; }
+        .feature-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: .65rem 1rem;
+            border-radius: 6px;
+            background: #0d47a1;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .feature-link:hover { background: #1a237e; }
+        .dashboard-status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #fff3cd;
+            color: #664d03;
+        }
+        .dashboard-status.error { background: #f8d7da; color: #842029; }
 
         .footer-info {
             text-align: center;
@@ -198,6 +242,18 @@
             font-size: 0.85rem;
             border-top: 1px solid #e0e0e0;
             margin-top: 2rem;
+        }
+        @media (max-width: 850px) {
+            .navbar { height: auto; min-height: 70px; padding: 1rem; flex-wrap: wrap; gap: .75rem; }
+            .navbar-menu { order: 3; flex-basis: 100%; display: flex; justify-content: center; flex-wrap: wrap; gap: .25rem; }
+            .nav-link { padding: 8px 10px; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 520px) {
+            .navbar-user { gap: 8px; }
+            .user-info { max-width: 135px; }
+            .main-content { padding: 1rem; }
+            .profile-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -209,7 +265,7 @@
             <span>PKP Jawa Timur</span>
         </div>
         <div class="navbar-menu">
-            <a href="puskesmas.html" class="nav-link">Profil</a>
+            <a href="puskesmas.html" class="nav-link" aria-current="page">Profil</a>
             <a href="input_kinerja.html" class="nav-link">Input Kinerja</a>
             <a href="data_kinerja.html" class="nav-link">Data Kinerja</a>
             <a href="monitoring.html" class="nav-link">Laporan</a>
@@ -224,14 +280,61 @@
         </div>
     </nav>
 
+    <main class="main-content">
+        <section class="welcome-card">
+            <h1>Dashboard Puskesmas</h1>
+            <p>Selamat datang, <strong id="welcomeName">memuat profil...</strong>. Pilih menu berikut untuk mengelola penilaian kinerja Puskesmas.</p>
+        </section>
+        <div id="dashboardStatus" class="dashboard-status" role="status" hidden></div>
+        <section class="info-card" aria-labelledby="profileTitle">
+            <h2 id="profileTitle">Profil Akun</h2>
+            <dl class="profile-grid">
+                <div class="profile-item"><dt>Nama pengguna</dt><dd id="profileName">-</dd></div>
+                <div class="profile-item"><dt>NIP</dt><dd id="profileNip">-</dd></div>
+                <div class="profile-item"><dt>Puskesmas</dt><dd id="profilePuskesmas">-</dd></div>
+                <div class="profile-item"><dt>Kode Puskesmas</dt><dd id="profileCode">-</dd></div>
+                <div class="profile-item"><dt>Kabupaten/Kota</dt><dd id="profileKabupaten">-</dd></div>
+            </dl>
+        </section>
+        <section class="feature-grid" aria-label="Navigasi fitur Puskesmas">
+            <article class="feature-card">
+                <h2>Input Kinerja</h2>
+                <p>Masukkan capaian indikator kinerja sesuai periode yang dibuka.</p>
+                <a class="feature-link" href="input_kinerja.html">Buka Input Kinerja</a>
+            </article>
+            <article class="feature-card">
+                <h2>Data Kinerja</h2>
+                <p>Lihat, saring, dan perbarui data kinerja yang telah disimpan.</p>
+                <a class="feature-link" href="data_kinerja.html">Buka Data Kinerja</a>
+            </article>
+            <article class="feature-card">
+                <h2>Laporan</h2>
+                <p>Pantau kelengkapan pengisian indikator berdasarkan kluster.</p>
+                <a class="feature-link" href="monitoring.html">Buka Laporan</a>
+            </article>
+        </section>
+        <footer class="footer-info">Penilaian Kinerja Puskesmas - Jawa Timur</footer>
+    </main>
+
     <script>
+        function setDashboardError(message) {
+            const status = document.getElementById('dashboardStatus');
+            status.textContent = message;
+            status.classList.add('error');
+            status.hidden = false;
+        }
+
         async function loadDashboard() {
             try {
                 const userRes = await fetch('API/get_current_user.php');
                 const userData = await userRes.json();
 
-                if (!userData.ok || !userData.user) {
-                    throw new Error(userData.error || 'Sesi tidak valid. Silakan login ulang.');
+                if (userRes.status === 401) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (!userRes.ok || !userData.ok || !userData.user) {
+                    throw new Error(userData.error || 'Gagal memuat profil pengguna.');
                 }
 
                 const user = userData.user;
@@ -241,15 +344,19 @@
                     return;
                 }
 
-                // Tampilkan data user di navbar
-                document.getElementById('displayName').textContent = user.nama;
-                document.getElementById('displayRole').textContent = 'Puskesmas: ' + user.puskesmas || user.role;
-                document.getElementById('displayAvatar').textContent = user.nama.charAt(0).toUpperCase();
+                const name = user.nama || '-';
+                document.getElementById('displayName').textContent = name;
+                document.getElementById('displayRole').textContent = `Puskesmas: ${user.puskesmas || user.puskesmas_kode || '-'}`;
+                document.getElementById('displayAvatar').textContent = name.charAt(0).toUpperCase() || 'P';
+                document.getElementById('welcomeName').textContent = name;
+                document.getElementById('profileName').textContent = name;
+                document.getElementById('profileNip').textContent = user.nip || '-';
+                document.getElementById('profilePuskesmas').textContent = user.puskesmas || '-';
+                document.getElementById('profileCode').textContent = user.puskesmas_kode || '-';
+                document.getElementById('profileKabupaten').textContent = user.kabupaten_nama || user.kabupaten_kode || '-';
 
-            } catch (e) {
-                if (e.message.includes('Sesi tidak valid')) {
-                    setTimeout(() => window.location.href = 'index.html', 3000);
-                }
+            } catch (error) {
+                setDashboardError(error.message || 'Gagal memuat profil. Silakan muat ulang halaman.');
             }
         }
 
