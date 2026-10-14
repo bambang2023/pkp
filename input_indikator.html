@@ -112,6 +112,8 @@
                     </div>
                     <div class="form-group">
                         <label for="indikator">Pilih Indikator</label>
+                        <label for="indikator-search">Cari indikator</label>
+                        <input type="search" id="indikator-search" placeholder="Cari kode atau nama indikator" aria-controls="indikator" disabled>
                         <select id="indikator" name="kd_ind" required disabled>
                             <option value="">Pilih kluster L3 terlebih dahulu</option>
                         </select>
@@ -161,8 +163,29 @@
             const klusterL2Select = document.getElementById('kluster_l2');
             const klusterL3Select = document.getElementById('kluster_l3');
             const indikatorSelect = document.getElementById('indikator');
+            const indikatorSearch = document.getElementById('indikator-search');
 
             let allKlusterL1 = [], allKlusterL2 = [], allKlusterL3 = [], allIndikator = [];
+            let filteredIndikator = [];
+
+            function renderIndikatorOptions(query = '') {
+                const searchTerm = query.trim().toLocaleLowerCase();
+                const matchingIndikator = filteredIndikator.filter(item =>
+                    `${item.kd_ind} ${item.indikator}`.toLocaleLowerCase().includes(searchTerm)
+                );
+
+                populateSelect(indikatorSelect, matchingIndikator, 'kd_ind', 'indikator', 'Pilih Indikator');
+                if (matchingIndikator.length === 0) {
+                    indikatorSelect.innerHTML = '<option value="">Indikator tidak ditemukan</option>';
+                }
+            }
+
+            function resetIndikator(placeholder) {
+                indikatorSearch.value = '';
+                indikatorSearch.disabled = true;
+                filteredIndikator = [];
+                resetSelect(indikatorSelect, placeholder);
+            }
 
             // 1. Cek otorisasi pengguna
             try {
@@ -211,7 +234,7 @@
                 populateSelect(klusterL1Select, filteredL1, 'kd_1', 'uraian', 'Pilih Kluster L1');
                 resetSelect(klusterL2Select, 'Pilih kluster L1 terlebih dahulu');
                 resetSelect(klusterL3Select, 'Pilih kluster L2 terlebih dahulu');
-                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+                resetIndikator('Pilih kluster L3 terlebih dahulu');
             });
 
             klusterL1Select.addEventListener('change', () => {
@@ -219,20 +242,26 @@
                 const filteredL2 = allKlusterL2.filter(item => item.kd_1 === selectedKd1);
                 populateSelect(klusterL2Select, filteredL2, 'kd_2', 'uraian', 'Pilih Kluster L2');
                 resetSelect(klusterL3Select, 'Pilih kluster L2 terlebih dahulu');
-                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+                resetIndikator('Pilih kluster L3 terlebih dahulu');
             });
 
             klusterL2Select.addEventListener('change', () => {
                 const selectedKd2 = klusterL2Select.value;
                 const filteredL3 = allKlusterL3.filter(item => item.kd_2 === selectedKd2);
                 populateSelect(klusterL3Select, filteredL3, 'kd_3', 'uraian', 'Pilih Kluster L3');
-                resetSelect(indikatorSelect, 'Pilih kluster L3 terlebih dahulu');
+                resetIndikator('Pilih kluster L3 terlebih dahulu');
             });
 
             klusterL3Select.addEventListener('change', () => {
                 const selectedKd3 = klusterL3Select.value;
-                const filteredIndikator = allIndikator.filter(item => item.kd_3 === selectedKd3);
-                populateSelect(indikatorSelect, filteredIndikator, 'kd_ind', 'indikator', 'Pilih Indikator');
+                filteredIndikator = allIndikator.filter(item => item.kd_3 === selectedKd3);
+                indikatorSearch.value = '';
+                indikatorSearch.disabled = false;
+                renderIndikatorOptions();
+            });
+
+            indikatorSearch.addEventListener('input', () => {
+                renderIndikatorOptions(indikatorSearch.value);
             });
 
             // 4. Handle Logout

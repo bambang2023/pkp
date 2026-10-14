@@ -20,6 +20,12 @@
         .button { display: inline-block; padding: 10px 16px; border-radius: 6px; color: #fff; background: #0d6efd; text-decoration: none; }
         .button-download { padding: 10px 16px; border: 0; border-radius: 6px; color: #fff; background: #198754; cursor: pointer; font: inherit; }
         .button-download:hover { background: #157347; }
+        .upload-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        .upload-form input[type="file"] { max-width: 100%; }
+        .upload-help { width: 100%; margin: 0; color: #495057; font-size: .9rem; }
+        .button-upload { padding: 10px 16px; border: 0; border-radius: 6px; color: #fff; background: #0d6efd; cursor: pointer; font: inherit; }
+        .button-upload:hover { background: #0b5ed7; }
+        .button-upload:disabled { cursor: wait; opacity: .65; }
         .filter { padding: 9px; border: 1px solid #ced4da; border-radius: 5px; }
         .cluster-filters { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 10px; margin-top: 20px; }
         .cluster-filters label { display: grid; gap: 6px; color: #495057; font-size: .85rem; font-weight: 600; }
@@ -83,9 +89,17 @@
                         <option value="12">Desember</option>
                     </select>
                     <a class="button" href="input_kinerja.html">Input Kinerja</a>
+                    <button class="button-download" id="downloadTemplateButton" type="button">Unduh Template CSV</button>
                     <button class="button-download" id="downloadCsvButton" type="button">Unduh CSV</button>
                 </div>
             </div>
+            <form class="upload-form" id="uploadCsvForm">
+                <label for="csvFileInput">Upload data kinerja (CSV)</label>
+                <input id="csvFileInput" name="file" type="file" accept=".csv,text/csv" required>
+                <button class="button-upload" id="uploadCsvButton" type="submit">Upload CSV</button>
+                <p class="upload-help">Isi kolom Bulan, Kode Indikator, Total Sasaran, dan Capaian pada template. Kolom lainnya dihitung dari data indikator.</p>
+            </form>
+            <div id="uploadStatus" class="status" role="status" aria-live="polite" hidden></div>
             <section class="cluster-filters" aria-label="Filter kluster">
                 <label for="level0Filter">Kluster level 0
                     <select id="level0Filter"><option value="">Semua kluster level 0</option></select>
@@ -145,7 +159,12 @@
         const table = document.getElementById('dataTable');
         const body = document.getElementById('dataBody');
         const monthFilter = document.getElementById('bulanFilter');
+        const downloadTemplateButton = document.getElementById('downloadTemplateButton');
         const downloadCsvButton = document.getElementById('downloadCsvButton');
+        const uploadCsvForm = document.getElementById('uploadCsvForm');
+        const csvFileInput = document.getElementById('csvFileInput');
+        const uploadCsvButton = document.getElementById('uploadCsvButton');
+        const uploadStatus = document.getElementById('uploadStatus');
         const level0Filter = document.getElementById('level0Filter');
         const level1Filter = document.getElementById('level1Filter');
         const level2Filter = document.getElementById('level2Filter');
@@ -353,8 +372,54 @@
             window.location.href = `API/download_data_kinerja.php?${params}`;
         }
 
+        function downloadTemplate() {
+            window.location.href = 'API/download_template_data_kinerja.php';
+        }
+
+        async function uploadCsv(event) {
+            event.preventDefault();
+            const file = csvFileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            uploadCsvButton.disabled = true;
+            uploadCsvButton.textContent = 'Mengunggah...';
+            uploadStatus.className = 'status';
+            uploadStatus.textContent = 'Memvalidasi dan menyimpan data CSV...';
+            uploadStatus.hidden = false;
+
+            try {
+                const response = await fetch('API/upload_data_kinerja.php', {
+                    method: 'POST',
+                    headers: { Accept: 'application/json' },
+                    body: formData,
+                });
+                const result = await response.json();
+                if (!response.ok || result.ok !== true) {
+                    const rowDetails = Array.isArray(result.errors)
+                        ? ` ${result.errors.join(' ')}`
+                        : '';
+                    throw new Error((result.error || 'Gagal mengunggah data kinerja.') + rowDetails);
+                }
+
+                uploadStatus.className = 'status';
+                uploadStatus.textContent = `${result.inserted} baris data berhasil disimpan.`;
+                csvFileInput.value = '';
+                await loadData();
+            } catch (error) {
+                uploadStatus.className = 'status error';
+                uploadStatus.textContent = error.message || 'Gagal mengunggah data kinerja.';
+            } finally {
+                uploadCsvButton.disabled = false;
+                uploadCsvButton.textContent = 'Upload CSV';
+            }
+        }
+
         monthFilter.addEventListener('change', render);
+        downloadTemplateButton.addEventListener('click', downloadTemplate);
         downloadCsvButton.addEventListener('click', downloadCsv);
+        uploadCsvForm.addEventListener('submit', uploadCsv);
         level0Filter.addEventListener('change', () => {
             level1Filter.value = '';
             level2Filter.value = '';
